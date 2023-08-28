@@ -6,10 +6,10 @@ import '../utils/contstants.dart';
 import 'auth_controller.dart';
 
 class BarangController with ChangeNotifier {
-  List<Barang> _items = []; // Daftar barang
-  final AuthController _authController = AuthController(); // Instance dari AuthController
+  List<Barang> _items = []; 
+  final AuthController _authController = AuthController(); 
 
-  List<Barang> get items => [..._items]; // Getter untuk daftar barang
+  List<Barang> get items => [..._items]; 
 
   // Fungsi untuk mengambil data barang dari server
   Future<BarangResponse> fetchBarang() async {
@@ -26,10 +26,9 @@ class BarangController with ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
-        // Parse ke model BarangResponse
         final responseData = BarangResponse.fromJson(json.decode(response.body));
         _items = responseData.barangs ?? [];
-        notifyListeners();  // Beritahu listener tentang perubahan data
+        notifyListeners();  
         return responseData;
       } else {
         throw Exception('Gagal mengambil data barang.');
@@ -43,6 +42,6 @@ class BarangController with ChangeNotifier {
   Future<void> refreshBarang() async {
     final newBarangs = await fetchBarang();
     _items = newBarangs.barangs ?? [];
-    notifyListeners();  // Beritahu listener tentang perubahan data
+    notifyListeners();  
   }
 }

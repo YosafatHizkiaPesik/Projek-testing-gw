@@ -37,7 +37,7 @@ class _LaporanPageState extends State<LaporanPage> {
     }
   }
 
-  // Inisialisasi data pada saat pertama kali
+  
   @override
   void initState() {
     super.initState();
@@ -108,7 +108,7 @@ body: LiquidPullToRefresh(
                           TextField(
                             readOnly: true,
                             controller: TextEditingController()
-                              ..text = dateFormat.format(_selectedStartDate), // Set default value
+                              ..text = dateFormat.format(_selectedStartDate), 
                             onTap: () async {
                               _selectDate(context, true);
                             },
@@ -130,7 +130,7 @@ body: LiquidPullToRefresh(
                           TextField(
                             readOnly: true,
                             controller: TextEditingController()
-                              ..text = dateFormat.format(_selectedEndDate), // Set default value
+                              ..text = dateFormat.format(_selectedEndDate), 
                             onTap: () async {
                               _selectDate(context, false);
                             },

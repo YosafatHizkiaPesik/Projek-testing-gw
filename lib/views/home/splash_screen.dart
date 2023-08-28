@@ -17,7 +17,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   _navigateToNextPage() async {
-    await Future.delayed(Duration(seconds: 3));  // Tambahkan delay di sini
+    await Future.delayed(Duration(seconds: 3));  
 
     bool isLoggedIn = await AuthController().isUserLoggedIn();
     if (isLoggedIn) {
@@ -49,7 +49,7 @@ class _SplashScreenState extends State<SplashScreen> {
           ],
         ),
       ),
-      backgroundColor: Color(0xFF009CFF), // Tambahkan warna latar belakang
+      backgroundColor: Color(0xFF009CFF), 
     );
   }
 }

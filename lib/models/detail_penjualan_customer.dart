@@ -1,3 +1,4 @@
+// Model untuk Detail Penjualan Customer
 class DetailPenjualanCustomer {
   final Map<String, String> teksFilter;
   final List<Cabang> cabangs;
@@ -6,6 +7,7 @@ class DetailPenjualanCustomer {
   final List<Barang> barangs;
   final List<PenjualanHeader> penjualanHeaders;
 
+  // Konstruktor untuk inisialisasi
   DetailPenjualanCustomer({
     required this.teksFilter,
     required this.cabangs,
@@ -15,6 +17,7 @@ class DetailPenjualanCustomer {
     required this.penjualanHeaders,
   });
 
+  // Fungsi untuk mengubah dari JSON ke object
   factory DetailPenjualanCustomer.fromJson(Map<String, dynamic> json) {
     return DetailPenjualanCustomer(
       teksFilter: Map<String, String>.from(json['teks_filter']),
@@ -27,6 +30,7 @@ class DetailPenjualanCustomer {
   }
 }
 
+// Model untuk Cabang
 class Cabang {
   final int id;
   final String nama;
@@ -41,6 +45,7 @@ class Cabang {
   }
 }
 
+// Model untuk Customer
 class Customer {
   final int id;
   final String nama;
@@ -55,6 +60,7 @@ class Customer {
   }
 }
 
+// Model untuk Gudang
 class Gudang {
   final int id;
   final String nama;
@@ -69,6 +75,7 @@ class Gudang {
   }
 }
 
+// Model untuk Barang
 class Barang {
   final int id;
   final String kodeBarang;
@@ -85,21 +92,74 @@ class Barang {
   }
 }
 
+// Model untuk Detail Penjualan Customer Response
+class DetailPenjualanCustomerResponse {
+  final String status;
+  final DetailPenjualanCustomer data;
+
+  DetailPenjualanCustomerResponse({
+    required this.status,
+    required this.data,
+  });
+
+  factory DetailPenjualanCustomerResponse.fromJson(Map<String, dynamic> json) {
+    return DetailPenjualanCustomerResponse(
+      status: json['status'],
+      data: DetailPenjualanCustomer.fromJson(json['data']),
+    );
+  }
+}
+
+// Model untuk Penjualan Header
 class PenjualanHeader {
   final int id;
   final int cabangId;
   final int customerId;
-  final String tanggal;
-  final int gudangId;
-  final String status;
+  final int salesId;
+  final int userKirimId;
+  final String aliasCabang;
+  final int noInvoice;
+  final String tanggalInvoice;
+  final String tanggalJatuhTempoInvoice;
+  final String tanggalKirim;
+  final int total;
+  final int totalOngkir;
+  final String payment;
+  final String keterangan;
+  final int statusPenjualan;
+  final int statusKirim;
+  final int createdBy;
+  final int updatedBy;
+  final String createdAt;
+  final String updatedAt;
+  final String? deletedBy;
+  final String? ipAddress;
+  final String? kotaCreatedIn;
 
   PenjualanHeader({
     required this.id,
     required this.cabangId,
     required this.customerId,
-    required this.tanggal,
-    required this.gudangId,
-    required this.status,
+    required this.salesId,
+    required this.userKirimId,
+    required this.aliasCabang,
+    required this.noInvoice,
+    required this.tanggalInvoice,
+    required this.tanggalJatuhTempoInvoice,
+    required this.tanggalKirim,
+    required this.total,
+    required this.totalOngkir,
+    required this.payment,
+    required this.keterangan,
+    required this.statusPenjualan,
+    required this.statusKirim,
+    required this.createdBy,
+    required this.updatedBy,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedBy,
+    this.ipAddress,
+    this.kotaCreatedIn,
   });
 
   factory PenjualanHeader.fromJson(Map<String, dynamic> json) {
@@ -107,9 +167,26 @@ class PenjualanHeader {
       id: json['id'],
       cabangId: json['cabang_id'],
       customerId: json['customer_id'],
-      tanggal: json['tanggal'],
-      gudangId: json['gudang_id'],
-      status: json['status'],
+      salesId: json['sales_id'],
+      userKirimId: json['user_kirim_id'],
+      aliasCabang: json['alias_cabang'],
+      noInvoice: json['no_invoice'],
+      tanggalInvoice: json['tanggal_invoice'],
+      tanggalJatuhTempoInvoice: json['tanggal_jatuh_tempo_invoice'],
+      tanggalKirim: json['tanggal_kirim'],
+      total: json['total'],
+      totalOngkir: json['total_ongkir'],
+      payment: json['payment'],
+      keterangan: json['keterangan'],
+      statusPenjualan: json['status_penjualan'],
+      statusKirim: json['status_kirim'],
+      createdBy: json['created_by'],
+      updatedBy: json['updated_by'],
+      createdAt: json['created_at'],
+      updatedAt: json['updated_at'],
+      deletedBy: json['deleted_by'],
+      ipAddress: json['ip_address'],
+      kotaCreatedIn: json['kota_created_in'],
     );
   }
 }

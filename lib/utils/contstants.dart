@@ -21,7 +21,7 @@ class ApiEndpoints {
   static const LAPORAN_KOMISI_SALES_PRINT = '${BASE_API_URL}laporan_komisi_sales/print_pdf';
 
   // Penjualan
-  static const DETAIL_PENJUALAN = '${BASE_API_URL}detail_penjualan_customer';
+  static const DETAIL_PENJUALAN_CUSTOMER = '${BASE_API_URL}detail_penjualan_customer';
   static const INVOICE_PENJUALAN = '${BASE_API_URL}invoice_penjualan';
   static const PENJUALAN_HEADER = '${BASE_API_URL}penjualan_header';
   static const PENJUALAN_HEADER_DETAIL = '${BASE_API_URL}penjualan_header/';

@@ -26,11 +26,11 @@ class _StockPageState extends State<StockPage> {
   @override
   void initState() {
     super.initState();
-    futureStock = stockController.fetchStocks(); // Inisialisasi fetch stok
+    futureStock = stockController.fetchStocks(); 
   }
 
   Future<void> _refresh() async {
-    await stockController.fetchStocks(); // Refresh stok
+    await stockController.fetchStocks(); 
   }
   @override
   Widget build(BuildContext context) {
@@ -301,12 +301,12 @@ Widget _getBodyItemWidget(String label, double width) {
 Widget _getRowWidget(Stock item, double width) {
   return Row(
     children: <Widget>[
-      _getBodyItemWidget(item.nama ?? '', 300),  // Barang
+      _getBodyItemWidget(item.nama ?? '', 300),  
       _getBodyItemWidget(
           item.stokList.isNotEmpty
               ? item.stokList[0].jumlah.toString()
               : '0',
-          250  // Stok
+          250  
       ),
     ],
   );

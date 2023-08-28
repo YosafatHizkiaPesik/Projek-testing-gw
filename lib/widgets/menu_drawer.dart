@@ -8,6 +8,7 @@ import '../views/auth/login_page.dart';
 import '../views/master/customer_page.dart';
 import '../views/stok/stok_page.dart';
 import '../views/laporan/laporan_komisi_page.dart';
+import '../views/penjualan/detail_penjualan_customer.dart';
 
 class MenuDrawer extends StatefulWidget {
   @override
@@ -88,7 +89,7 @@ class _MenuDrawerState extends State<MenuDrawer> {
                       ),
                       ListTile(
                         title: Text('Detail Penjualan Customer'),
-                        onTap: () {},
+                        // onTap: () => Get.off(() => DetailPenjualanCustomerPage()),
                       ),
                     ],
                   );

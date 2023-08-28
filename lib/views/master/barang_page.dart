@@ -166,7 +166,7 @@ class _BarangPageState extends State<BarangPage> {
                     onChanged: (newValue) {
                       setState(() {
                         itemsPerPage = newValue!;
-                        currentPage = 1; // Reset ke halaman pertama
+                        currentPage = 1; 
                       });
                     },
                   ),
