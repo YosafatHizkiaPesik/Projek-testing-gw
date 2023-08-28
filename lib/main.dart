@@ -1,26 +1,38 @@
 import 'package:flutter/material.dart';
-import 'package:dwijaya_sales_app/widgets/splash_screen.dart'; // Gantikan dengan path yang benar ke SplashScreen
-import 'package:dwijaya_sales_app/views/login_page.dart'; // Gantikan dengan path yang benar ke LoginPage
-import 'package:dwijaya_sales_app/views/dashboard/dashboard.dart'; // Gantikan dengan path yang benar ke DashboardScreen
+import 'package:get/get.dart';
+import 'controllers/auth_controller.dart'; 
+import 'controllers/barang_controller.dart'; 
+import 'controllers/laporan_controller.dart';
+import 'views/auth/login_page.dart';
+import 'views/home/dashboard_page.dart';
+import 'views/home/splash_screen.dart';
+
 
 void main() {
-  runApp(DwijayaSalesApp());
+  runApp(MyApp());
 }
 
-class DwijayaSalesApp extends StatelessWidget {
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Dwi Jaya',
+    Get.put(AuthController());  
+    Get.put(BarangController());  
+    Get.put(LaporanController());
+  
+
+    return GetMaterialApp(
+      title: 'DWI JAYA',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: SplashScreen(),
-      routes: {
-        '/login': (context) => LoginPage(),
-        '/dashboard': (context) => DashboardScreen(),
-        // Anda dapat menambahkan rute lain di sini sesuai kebutuhan
-      },
+      initialRoute: '/',
+      getPages: [
+        GetPage(name: '/', page: () => SplashScreen()),
+        GetPage(name: '/login', page: () => LoginPage()),
+        GetPage(name: '/dashboard', page: () => DashboardPage()),
+      ],
     );
   }
 }
