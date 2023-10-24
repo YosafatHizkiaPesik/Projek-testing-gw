@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:horizontal_data_table/horizontal_data_table.dart';
@@ -16,13 +15,12 @@ class _BarangPageState extends State<BarangPage> {
   final _drawerController = ZoomDrawerController();
   final barangController = BarangController();
   late Future<BarangResponse> futureBarang;
-  List<Barang> filteredItems = [];
   TextEditingController searchController = TextEditingController();
   bool showSearchBar = false;
 
-  // Variabel untuk paginasi
   int currentPage = 1;
   int itemsPerPage = 10;
+  List<Barang> filteredItems = [];
   int totalBarang = 0;
 
   @override
@@ -45,74 +43,24 @@ class _BarangPageState extends State<BarangPage> {
       mainScreen: Scaffold(
         appBar: AppBar(
           title: showSearchBar
-              ? Autocomplete<Barang>(
-                  optionsBuilder: (textEditingValue) {
-                    if (textEditingValue.text.isEmpty) {
-                      return const Iterable<Barang>.empty();
-                    }
-                    return filteredItems.where((item) {
-                      return item.nama!
-                          .toLowerCase()
-                          .contains(textEditingValue.text.toLowerCase());
-                    });
-                  },
-                  optionsViewBuilder: (BuildContext context, AutocompleteOnSelected<Barang> onSelected, Iterable<Barang> options) {
-                    return Align(
-                      alignment: Alignment.topLeft,
-                      child: Material(
-                        elevation: 4.0,
-                        child: ListView.builder(
-                          itemCount: options.length,
-                          itemBuilder: (BuildContext context, int index) {
-                            final Barang option = options.elementAt(index);
-                            return GestureDetector(
-                              onTap: () {
-                                onSelected(option);
-                              },
-                              child: ListTile(
-                                title: Text(option.nama!),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                  fieldViewBuilder: (BuildContext context, TextEditingController textEditingController, FocusNode focusNode, VoidCallback onFieldSubmitted) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                      ),
-                      child: TextField(
-                        controller: searchController,
-                        focusNode: focusNode,
-                        decoration: InputDecoration(
-                          hintText: 'Cari barang...',
-                          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(20)),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(20)),
-                            borderSide: BorderSide(color: Colors.transparent, width: 0),
-                          ),
-                        ),
-                        onChanged: (text) {
-                          setState(() {
-                            filteredItems = filteredItems.where((item) {
-                              return item.nama!
-                                  .toLowerCase()
-                                  .contains(text.toLowerCase());
-                            }).toList();
-                          });
-                        },
-                      ),
-                    );
-                  },
-                  onSelected: (Barang selection) {
-                    print("You selected: ${selection.nama}");
-                  },
+              ? Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.all(Radius.circular(20)),
+                  ),
+                  child: TextField(
+                    controller: searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Cari barang...',
+                      contentPadding: EdgeInsets.symmetric(horizontal: 20),
+                      border: InputBorder.none,
+                    ),
+                    onChanged: (text) {
+                      setState(() {
+                        filteredItems = [];
+                      });
+                    },
+                  ),
                 )
               : Text('Barang'),
           leading: IconButton(
@@ -128,6 +76,8 @@ class _BarangPageState extends State<BarangPage> {
                     onPressed: () {
                       setState(() {
                         showSearchBar = false;
+                        searchController.clear();
+                        filteredItems = [];
                       });
                     },
                   )
@@ -146,7 +96,70 @@ class _BarangPageState extends State<BarangPage> {
           showChildOpacityTransition: false,
           child: Column(
             children: [
-              // Dropdown untuk memilih jumlah item per halaman
+              FutureBuilder<BarangResponse>(
+                future: futureBarang,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
+                  if (snapshot.hasData && snapshot.data != null) {
+                    final items = snapshot.data!.barangs ?? [];
+
+                    final start = (currentPage - 1) * itemsPerPage;
+
+                    filteredItems = items.where((item) {
+                      return item.nama!
+                          .toLowerCase()
+                          .contains(searchController.text.toLowerCase());
+                    }).toList();
+
+                    final end = start + itemsPerPage;
+                    final itemsOnPage = filteredItems.sublist(
+                      start,
+                      end.clamp(0, filteredItems.length),
+                    );
+
+                    totalBarang = items.length;
+
+                    return Expanded(
+                      child: HorizontalDataTable(
+                        leftHandSideColumnWidth: 50,
+                        rightHandSideColumnWidth: 600,
+                        isFixedHeader: true,
+                        headerWidgets: [
+                          _getTitleItemWidget('No', 50),
+                          _getTitleItemWidget('Barang', 200),
+                          _getTitleItemWidget('HP', 100),
+                          _getTitleItemWidget('H1', 100),
+                          _getTitleItemWidget('H2', 100),
+                          _getTitleItemWidget('H3', 100),
+                        ],
+                        leftSideItemBuilder: (BuildContext context, int index) {
+                          return _getBodyItemWidget(
+                              (start + index + 1).toString(), 50);
+                        },
+                        rightSideItemBuilder:
+                            (BuildContext context, int index) {
+                          return _getRowWidget(itemsOnPage[index], 600);
+                        },
+                        itemCount: itemsOnPage.length,
+                        rowSeparatorWidget: const Divider(
+                          color: Colors.black54,
+                          height: 1.0,
+                          thickness: 0.0,
+                        ),
+                        leftHandSideColBackgroundColor: Color(0xFFFFFFFF),
+                        rightHandSideColBackgroundColor: Color(0xFFFFFFFF),
+                      ),
+                    );
+                  } else {
+                    return Center(child: Text('Data tidak tersedia.'));
+                  }
+                },
+              ),
               Align(
                 alignment: Alignment.centerRight,
                 child: Container(
@@ -166,63 +179,12 @@ class _BarangPageState extends State<BarangPage> {
                     onChanged: (newValue) {
                       setState(() {
                         itemsPerPage = newValue!;
-                        currentPage = 1; 
+                        currentPage = 1;
                       });
                     },
                   ),
                 ),
               ),
-              Expanded(
-                child: FutureBuilder<BarangResponse>(
-                  future: futureBarang,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
-                    }
-                    if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
-                    }
-                    if (snapshot.hasData && snapshot.data != null) {
-                      final items = snapshot.data!.barangs ?? [];
-                      filteredItems = items;
-
-                      // Kode untuk paginasi
-                      final start = (currentPage - 1) * itemsPerPage;
-                      final end = min(start + itemsPerPage, filteredItems.length);
-                      final itemsOnPage = filteredItems.sublist(start, end);
-
-                      return HorizontalDataTable(
-                        leftHandSideColumnWidth: 50,
-                        rightHandSideColumnWidth: 600,
-                        isFixedHeader: true,
-                        headerWidgets: [
-                          _getTitleItemWidget('No', 50),
-                          _getTitleItemWidget('Barang', 200),
-                          _getTitleItemWidget('HP', 100),
-                          _getTitleItemWidget('H1', 100),
-                          _getTitleItemWidget('H2', 100),
-                          _getTitleItemWidget('H3', 100),
-                        ],
-                        leftSideItemBuilder: (BuildContext context, int index) {
-                          return _getBodyItemWidget((start + index + 1).toString(), 50);
-                        },
-                        rightSideItemBuilder: (BuildContext context, int index) {
-                          return _getRowWidget(itemsOnPage[index], 600);
-                        },
-                        itemCount: itemsOnPage.length,
-                        rowSeparatorWidget: const Divider(
-                          color: Colors.black54,
-                          height: 1.0,
-                          thickness: 0.0,
-                        ),
-                      );
-                    } else {
-                      return Center(child: Text('Data tidak tersedia.'));
-                    }
-                  },
-                ),
-              ),
-              // Tombol paginasi
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -246,11 +208,12 @@ class _BarangPageState extends State<BarangPage> {
                       }
                     },
                   ),
-                  Text('Halaman $currentPage dari ${(filteredItems.length / itemsPerPage).ceil()}'),
+                  Text(
+                      'Halaman $currentPage dari ${(totalBarang / itemsPerPage).ceil()}'),
                   IconButton(
                     icon: Icon(Icons.arrow_forward),
                     onPressed: () {
-                      if (currentPage < (filteredItems.length / itemsPerPage).ceil()) {
+                      if (currentPage < (totalBarang / itemsPerPage).ceil()) {
                         setState(() {
                           currentPage++;
                         });
@@ -260,7 +223,7 @@ class _BarangPageState extends State<BarangPage> {
                   IconButton(
                     icon: Icon(Icons.last_page),
                     onPressed: () {
-                      int lastPage = (filteredItems.length / itemsPerPage).ceil();
+                      int lastPage = (totalBarang / itemsPerPage).ceil();
                       if (currentPage != lastPage) {
                         setState(() {
                           currentPage = lastPage;

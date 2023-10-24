@@ -15,14 +15,13 @@ class _CustomerPageState extends State<CustomerPage> {
   final _drawerController = ZoomDrawerController();
   final customerController = CustomerController();
   late Future<CustomerResponse> futureCustomer;
-  List<Customer> filteredCustomers = [];
   TextEditingController searchController = TextEditingController();
   bool showSearchBar = false;
 
   int currentPage = 1;
-  int itemsPerPage = 10; 
-  int totalCustomers = 0; 
-
+  int itemsPerPage = 10;
+  List<Customer> filteredCustomers = [];
+  int totalCustomers = 0;
 
   @override
   void initState() {
@@ -43,78 +42,25 @@ class _CustomerPageState extends State<CustomerPage> {
       menuScreen: MenuDrawer(),
       mainScreen: Scaffold(
         appBar: AppBar(
-          // Bagian pencarian customer
           title: showSearchBar
-              ? Autocomplete<Customer>(
-                  optionsBuilder: (textEditingValue) {
-                    if (textEditingValue.text.isEmpty) {
-                      return const Iterable<Customer>.empty();
-                    }
-                    return filteredCustomers.where((customer) {
-                      return customer.nama!
-                          .toLowerCase()
-                          .contains(textEditingValue.text.toLowerCase());
-                    });
-                  },
-                  // Bagian dropdown hasil pencarian
-                  optionsViewBuilder: (BuildContext context, AutocompleteOnSelected<Customer> onSelected, Iterable<Customer> options) {
-                    return Align(
-                      alignment: Alignment.topLeft,
-                      child: Material(
-                        elevation: 4.0,
-                        child: ListView.builder(
-                          itemCount: options.length,
-                          itemBuilder: (BuildContext context, int index) {
-                            final Customer option = options.elementAt(index);
-                            return GestureDetector(
-                              onTap: () {
-                                onSelected(option);
-                              },
-                              child: ListTile(
-                                title: Text(option.nama!),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                  // Bagian input pencarian
-                  fieldViewBuilder: (BuildContext context, TextEditingController textEditingController, FocusNode focusNode, VoidCallback onFieldSubmitted) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                      ),
-                      child: TextField(
-                        controller: searchController,
-                        focusNode: focusNode,
-                        decoration: InputDecoration(
-                          hintText: 'Cari customer...',
-                          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(20)),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(20)),
-                            borderSide: BorderSide(color: Colors.transparent, width: 0),
-                          ),
-                        ),
-                        onChanged: (text) {
-                          setState(() {
-                            filteredCustomers = filteredCustomers.where((customer) {
-                              return customer.nama!
-                                  .toLowerCase()
-                                  .contains(text.toLowerCase());
-                            }).toList();
-                          });
-                        },
-                      ),
-                    );
-                  },
-                  onSelected: (Customer selection) {
-                    print("Anda memilih: ${selection.nama}");
-                  },
+              ? Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.all(Radius.circular(20)),
+                  ),
+                  child: TextField(
+                    controller: searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Cari customer...',
+                      contentPadding: EdgeInsets.symmetric(horizontal: 20),
+                      border: InputBorder.none,
+                    ),
+                    onChanged: (text) {
+                      setState(() {
+                        filteredCustomers = [];
+                      });
+                    },
+                  ),
                 )
               : Text('Customer'),
           leading: IconButton(
@@ -130,6 +76,8 @@ class _CustomerPageState extends State<CustomerPage> {
                     onPressed: () {
                       setState(() {
                         showSearchBar = false;
+                        searchController.clear();
+                        filteredCustomers = [];
                       });
                     },
                   )
@@ -141,15 +89,81 @@ class _CustomerPageState extends State<CustomerPage> {
                       });
                     },
                   ),
-                  
           ],
         ),
-        // Bagian isi halaman customer
         body: LiquidPullToRefresh(
           onRefresh: _refresh,
           showChildOpacityTransition: false,
           child: Column(
             children: [
+              FutureBuilder<CustomerResponse>(
+                future: futureCustomer,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
+                  if (snapshot.hasData && snapshot.data != null) {
+                    final customers = snapshot.data!.customers ?? [];
+
+                    final start = (currentPage - 1) * itemsPerPage;
+
+                    filteredCustomers = customers.where((customer) {
+                      return customer.nama!
+                          .toLowerCase()
+                          .contains(searchController.text.toLowerCase());
+                    }).toList();
+
+                    final end = start + itemsPerPage;
+                    final customersOnPage = filteredCustomers.sublist(
+                      start,
+                      end.clamp(0, filteredCustomers.length),
+                    );
+
+                    totalCustomers = customers.length;
+
+                    return Expanded(
+                      child: HorizontalDataTable(
+                        leftHandSideColumnWidth: 50,
+                        rightHandSideColumnWidth: 600,
+                        isFixedHeader: true,
+                        headerWidgets: [
+                          _getTitleItemWidget('No', 50),
+                          _getTitleItemWidget(
+                              'Nama Customer', 200), // Ubah lebar menjadi 200
+                          _getTitleItemWidget('Alamat', 100),
+                          _getTitleItemWidget('No. Telepon', 100),
+                          _getTitleItemWidget('Kota', 100),
+                          _getTitleItemWidget('Term of Payment', 100),
+                          _getTitleItemWidget('Rekomendasi Harga', 100),
+                          _getTitleItemWidget(
+                              'Limit', 200), // Ubah lebar menjadi 200
+                        ],
+                        leftSideItemBuilder: (BuildContext context, int index) {
+                          return _getBodyItemWidget(
+                              (start + index + 1).toString(), 50);
+                        },
+                        rightSideItemBuilder:
+                            (BuildContext context, int index) {
+                          return _getRowWidget(customersOnPage[index], 600);
+                        },
+                        itemCount: customersOnPage.length,
+                        rowSeparatorWidget: const Divider(
+                          color: Colors.black54,
+                          height: 1.0,
+                          thickness: 0.0,
+                        ),
+                        leftHandSideColBackgroundColor: Color(0xFFFFFFFF),
+                        rightHandSideColBackgroundColor: Color(0xFFFFFFFF),
+                      ),
+                    );
+                  } else {
+                    return Center(child: Text('Data tidak tersedia.'));
+                  }
+                },
+              ),
               Align(
                 alignment: Alignment.centerRight,
                 child: Container(
@@ -169,64 +183,10 @@ class _CustomerPageState extends State<CustomerPage> {
                     onChanged: (newValue) {
                       setState(() {
                         itemsPerPage = newValue!;
-                        currentPage = 1; 
+                        currentPage = 1;
                       });
                     },
                   ),
-                ),
-              ),
-              Expanded(
-                child: FutureBuilder<CustomerResponse>(
-                  future: futureCustomer,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
-                    }
-                    if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
-                    }
-                    if (snapshot.hasData && snapshot.data != null) {
-                      final customers = snapshot.data!.customers ?? [];
-                      filteredCustomers = customers
-                          .where((customer) => customer.nama!
-                              .toLowerCase()
-                              .contains(searchController.text.toLowerCase()))
-                          .toList();
-                      return HorizontalDataTable(
-                        leftHandSideColumnWidth: 50,
-                        rightHandSideColumnWidth: 50 + 200 + 100 + 100 + 100 + 100 + 100 + 100,
-
-                        isFixedHeader: true,
-                        //Header table
-                        headerWidgets: [
-                          _getTitleItemWidget('No', 50),
-                          _getTitleItemWidget('Nama Customer', 200),
-                          _getTitleItemWidget('Alamat', 100),
-                          _getTitleItemWidget('No. Telepon', 100),
-                          _getTitleItemWidget('Kota', 100),
-                          _getTitleItemWidget('Term of Payment', 100),
-                          _getTitleItemWidget('Rekomendasi Harga', 100),
-                          _getTitleItemWidget('Limit', 100),
-                        ],
-                        leftSideItemBuilder: (BuildContext context, int index) {
-                          return _getBodyItemWidget((index + 1).toString(), 50);
-                        },
-                        rightSideItemBuilder: (BuildContext context, int index) {
-                          return _getRowWidget(filteredCustomers[index], 600);
-                        },
-                        itemCount: filteredCustomers.length,
-                        rowSeparatorWidget: const Divider(
-                          color: Colors.black54,
-                          height: 1.0,
-                          thickness: 0.0,
-                        ),
-                        leftHandSideColBackgroundColor: Color(0xFFFFFFFF),
-                        rightHandSideColBackgroundColor: Color(0xFFFFFFFF),
-                      );
-                    } else {
-                      return Center(child: Text('Data tidak tersedia.'));
-                    }
-                  },
                 ),
               ),
               Row(
@@ -252,11 +212,13 @@ class _CustomerPageState extends State<CustomerPage> {
                       }
                     },
                   ),
-                  Text('Halaman $currentPage dari ${(filteredCustomers.length / itemsPerPage).ceil()}'),
+                  Text(
+                      'Halaman $currentPage dari ${(totalCustomers / itemsPerPage).ceil()}'),
                   IconButton(
                     icon: Icon(Icons.arrow_forward),
                     onPressed: () {
-                      if (currentPage < (filteredCustomers.length / itemsPerPage).ceil()) {
+                      if (currentPage <
+                          (totalCustomers / itemsPerPage).ceil()) {
                         setState(() {
                           currentPage++;
                         });
@@ -266,7 +228,7 @@ class _CustomerPageState extends State<CustomerPage> {
                   IconButton(
                     icon: Icon(Icons.last_page),
                     onPressed: () {
-                      int lastPage = (filteredCustomers.length / itemsPerPage).ceil();
+                      int lastPage = (totalCustomers / itemsPerPage).ceil();
                       if (currentPage != lastPage) {
                         setState(() {
                           currentPage = lastPage;
@@ -280,14 +242,9 @@ class _CustomerPageState extends State<CustomerPage> {
           ),
         ),
       ),
-      borderRadius: 24.0,
-      showShadow: true,
-      angle: -12.0,
-      slideWidth: MediaQuery.of(context).size.width * 0.65,
     );
   }
 
-  // Widget untuk menampilkan judul kolom
   Widget _getTitleItemWidget(String label, double width) {
     return Container(
       child: Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
@@ -298,8 +255,7 @@ class _CustomerPageState extends State<CustomerPage> {
     );
   }
 
-  // Widget untuk menampilkan item di setiap baris
-Widget _getBodyItemWidget(String label, double width) {
+  Widget _getBodyItemWidget(String label, double width) {
     return Container(
       child: Text(label),
       width: width,
@@ -309,19 +265,23 @@ Widget _getBodyItemWidget(String label, double width) {
     );
   }
 
-  // Widget untuk menampilkan data customer di setiap baris
-  Widget _getRowWidget(Customer item, double width) {
-    return Row(
-      children: <Widget>[
-        _getBodyItemWidget(item.nama ?? '', 200),
-        _getBodyItemWidget(item.alamat ?? '', 100),
-        _getBodyItemWidget(item.noTelepon ?? '', 100),
-        _getBodyItemWidget(item.kota ?? '', 100),
-        _getBodyItemWidget(item.termOfPayment ?? '', 100),
-        _getBodyItemWidget(item.rekomendasiHarga ?? '', 100),
-        _getBodyItemWidget(item.limit != null ? item.limit.toString() : "Data kosong", 100),
-      ],
+  Widget _getRowWidget(Customer customer, double width) {
+    return Container(
+      child: Row(
+        children: <Widget>[
+          _getBodyItemWidget(
+              customer.nama ?? '', 200), // Ubah lebar menjadi 200
+          _getBodyItemWidget(customer.alamat ?? '', 100),
+          _getBodyItemWidget(customer.noTelepon ?? '', 100),
+          _getBodyItemWidget(customer.kota ?? '', 100),
+          _getBodyItemWidget(customer.termOfPayment ?? '', 100),
+          _getBodyItemWidget(customer.rekomendasiHarga ?? '', 100),
+          _getBodyItemWidget(
+              customer.limit.toString(), 200), // Ubah lebar menjadi 200
+        ],
+      ),
+      width: width,
+      height: 52,
     );
   }
-
 }

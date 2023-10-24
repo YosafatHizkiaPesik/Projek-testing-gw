@@ -33,82 +33,74 @@ class _MenuDrawerState extends State<MenuDrawer> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              itemCount: 5,
-              itemBuilder: (BuildContext context, int index) {
-                if (index == 0) {
-                  return ListTile(
-                    leading: Icon(Icons.dashboard),
-                    title: Text('Dashboard'),
-                    onTap: () => Get.off(() => DashboardPage()),
-                  );
-                } else if (index == 1) {
-                  return buildExpansionTile(
-                    context,
-                    index,
-                    title: 'Master',
-                    icon: Icons.list,
-                    children: [
-                      ListTile(
-                        title: Text('Barang'),
-                        onTap: () => Get.off(() => BarangPage()),
-                      ),
-                      ListTile(
-                        title: Text('Customer'),
-                        onTap: () => Get.off(() => CustomerPage()),
-                      ),
-                    ],
-                  );
-                } else if (index == 2) {
-                  return buildExpansionTile(
-                    context,
-                    index,
-                    title: 'Stok',
-                    icon: Icons.store,
-                    children: [
-                      ListTile(
-                        title: Text('Posisi Stok'),
-                        onTap: () => Get.off(() => StockPage()),
-                      ),
-                    ],
-                  );
-                } else if (index == 3) {
-                  return buildExpansionTile(
-                    context,
-                    index,
-                    title: 'Penjualan',
-                    icon: Icons.shopping_cart,
-                    children: [
-                      ListTile(
-                        title: Text('Pesanan Penjualan (SO)'),
-                        onTap: () {},
-                      ),
-                      ListTile(
-                        title: Text('Penjualan (Invoice)'),
-                        onTap: () {},
-                      ),
-                      ListTile(
-                        title: Text('Detail Penjualan Customer'),
-                        // onTap: () => Get.off(() => DetailPenjualanCustomerPage()),
-                      ),
-                    ],
-                  );
-                } else if (index == 4) {
-                  return buildExpansionTile(
-                    context,
-                    index,
-                    title: 'Laporan',
-                    icon: Icons.print,
-                    children: [
-                      ListTile(
-                        title: Text('Laporan Komisi'),
-                        onTap: () => Get.off(() => LaporanPage()),
-                      ),
-                    ],
-                  );
-                }
-                return SizedBox.shrink();
-              },
+            child: ListView(
+              children: [
+                ListTile(
+                  leading: Icon(Icons.dashboard),
+                  title: Text('Dashboard'),
+                  onTap: () => Get.off(() => DashboardPage()),
+                ),
+                buildExpansionTile(
+                  context,
+                  1,
+                  title: 'Master',
+                  icon: Icons.list,
+                  children: [
+                    ListTile(
+                      title: Text('Barang'),
+                      onTap: () => Get.off(() => BarangPage()),
+                    ),
+                    ListTile(
+                      title: Text('Customer'),
+                      onTap: () => Get.off(() => CustomerPage()),
+                    ),
+                  ],
+                ),
+                buildExpansionTile(
+                  context,
+                  2,
+                  title: 'Stok',
+                  icon: Icons.store,
+                  children: [
+                    ListTile(
+                      title: Text('Posisi Stok'),
+                      onTap: () => Get.off(() => StockPage()),
+                    ),
+                  ],
+                ),
+                buildExpansionTile(
+                  context,
+                  3,
+                  title: 'Penjualan',
+                  icon: Icons.shopping_cart,
+                  children: [
+                    ListTile(
+                      title: Text('Pesanan Penjualan (SO)'),
+                      onTap: () {},
+                    ),
+                    ListTile(
+                      title: Text('Penjualan (Invoice)'),
+                      onTap: () {},
+                    ),
+                    ListTile(
+                      title: Text('Detail Penjualan Customer'),
+                      // onTap: () => Get.off(() => DetailPenjualanCustomerPage()),
+                    ),
+                  ],
+                ),
+                buildExpansionTile(
+                  context,
+                  4,
+                  title: 'Laporan',
+                  icon: Icons.print,
+                  children: [
+                    ListTile(
+                      title: Text('Laporan Komisi'),
+                      onTap: () => Get.off(() => LaporanPage()),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
           buildExpansionTile(
@@ -132,8 +124,7 @@ class _MenuDrawerState extends State<MenuDrawer> {
                     title: 'Konfirmasi',
                     desc: 'Apakah Anda yakin ingin Logout?',
                     buttonsTextStyle: TextStyle(color: Colors.black),
-                    btnCancelOnPress: () {
-                    },
+                    btnCancelOnPress: () {},
                     btnOkOnPress: () async {
                       await authController.logout();
                       Get.offAll(() => LoginPage());
@@ -141,7 +132,7 @@ class _MenuDrawerState extends State<MenuDrawer> {
                     btnCancelText: 'Batal',
                     btnOkText: 'Logout',
                     btnOkColor: Colors.red,
-                    btnCancelColor: Colors.blue, 
+                    btnCancelColor: Colors.blue,
                   ).show();
                 },
               ),
@@ -152,7 +143,10 @@ class _MenuDrawerState extends State<MenuDrawer> {
     );
   }
 
-Widget buildExpansionTile(BuildContext context, int index, {required String title, required IconData icon, required List<Widget> children}) {
+  Widget buildExpansionTile(BuildContext context, int index,
+      {required String title,
+      required IconData icon,
+      required List<Widget> children}) {
     return ExpansionTile(
       leading: Icon(icon),
       title: Text(title),

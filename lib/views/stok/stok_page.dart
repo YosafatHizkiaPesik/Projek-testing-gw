@@ -15,23 +15,26 @@ class _StockPageState extends State<StockPage> {
   final _drawerController = ZoomDrawerController();
   final stockController = StockController();
   late Future<StockResponse> futureStock;
-  List<Stock> filteredStocks = [];
   TextEditingController searchController = TextEditingController();
   bool showSearchBar = false;
 
   int currentPage = 1;
   int itemsPerPage = 10;
   int totalStocks = 0;
+  List<Stock> filteredStocks = [];
 
   @override
   void initState() {
     super.initState();
-    futureStock = stockController.fetchStocks(); 
+    futureStock = stockController.fetchStocks();
   }
 
   Future<void> _refresh() async {
-    await stockController.fetchStocks(); 
+    setState(() {
+      futureStock = stockController.fetchStocks();
+    });
   }
+
   @override
   Widget build(BuildContext context) {
     return ZoomDrawer(
@@ -39,78 +42,33 @@ class _StockPageState extends State<StockPage> {
       menuScreen: MenuDrawer(),
       mainScreen: Scaffold(
         appBar: AppBar(
-          // Bagian pencarian Stock
           title: showSearchBar
-              ? Autocomplete<Stock>(
-                  optionsBuilder: (textEditingValue) {
-                    if (textEditingValue.text.isEmpty) {
-                      return const Iterable<Stock>.empty();
-                    }
-                    return filteredStocks.where((Stock) {
-                      return Stock.nama!
-                          .toLowerCase()
-                          .contains(textEditingValue.text.toLowerCase());
-                    });
-                  },
-                  // Bagian dropdown hasil pencarian
-                  optionsViewBuilder: (BuildContext context, AutocompleteOnSelected<Stock> onSelected, Iterable<Stock> options) {
-                    return Align(
-                      alignment: Alignment.topLeft,
-                      child: Material(
-                        elevation: 4.0,
-                        child: ListView.builder(
-                          itemCount: options.length,
-                          itemBuilder: (BuildContext context, int index) {
-                            final Stock option = options.elementAt(index);
-                            return GestureDetector(
-                              onTap: () {
-                                onSelected(option);
-                              },
-                              child: ListTile(
-                                title: Text(option.nama!),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                  // Bagian input pencarian
-                  fieldViewBuilder: (BuildContext context, TextEditingController textEditingController, FocusNode focusNode, VoidCallback onFieldSubmitted) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
+              ? Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.all(Radius.circular(20)),
+                  ),
+                  child: TextField(
+                    controller: searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Cari Stock...',
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(20)),
                       ),
-                      child: TextField(
-                        controller: searchController,
-                        focusNode: focusNode,
-                        decoration: InputDecoration(
-                          hintText: 'Cari Stock...',
-                          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(20)),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(20)),
-                            borderSide: BorderSide(color: Colors.transparent, width: 0),
-                          ),
-                        ),
-                        onChanged: (text) {
-                          setState(() {
-                            filteredStocks = filteredStocks.where((Stock) {
-                              return Stock.nama!
-                                  .toLowerCase()
-                                  .contains(text.toLowerCase());
-                            }).toList();
-                          });
-                        },
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(20)),
+                        borderSide:
+                            BorderSide(color: Colors.transparent, width: 0),
                       ),
-                    );
-                  },
-                  onSelected: (Stock selection) {
-                    print("Anda memilih: ${selection.nama}");
-                  },
+                    ),
+                    onChanged: (text) {
+                      setState(() {
+                        filteredStocks = [];
+                      });
+                    },
+                  ),
                 )
               : Text('Stock'),
           leading: IconButton(
@@ -126,6 +84,8 @@ class _StockPageState extends State<StockPage> {
                     onPressed: () {
                       setState(() {
                         showSearchBar = false;
+                        searchController.clear();
+                        filteredStocks = [];
                       });
                     },
                   )
@@ -136,7 +96,7 @@ class _StockPageState extends State<StockPage> {
                         showSearchBar = true;
                       });
                     },
-                  ),           
+                  ),
           ],
         ),
         body: LiquidPullToRefresh(
@@ -169,7 +129,6 @@ class _StockPageState extends State<StockPage> {
                   ),
                 ),
               ),
-              // Tabel stok
               Expanded(
                 child: FutureBuilder<StockResponse>(
                   future: futureStock,
@@ -182,29 +141,42 @@ class _StockPageState extends State<StockPage> {
                     }
                     if (snapshot.hasData && snapshot.data != null) {
                       final stocks = snapshot.data!.stocks ?? [];
-                      filteredStocks = stocks
-                          .where((customer) => customer.nama!
-                              .toLowerCase()
-                              .contains(searchController.text.toLowerCase()))
-                          .toList();
+
+                      final start = (currentPage - 1) * itemsPerPage;
+
+                      filteredStocks = stocks.where((stock) {
+                        return stock.nama!
+                            .toLowerCase()
+                            .contains(searchController.text.toLowerCase());
+                      }).toList();
+
+                      final end = start + itemsPerPage;
+                      final stocksOnPage = filteredStocks.sublist(
+                        start,
+                        end.clamp(0, filteredStocks.length),
+                      );
+
+                      totalStocks = stocks.length;
+
                       return HorizontalDataTable(
                         leftHandSideColumnWidth: 50,
-                        rightHandSideColumnWidth: 600,
-
+                        rightHandSideColumnWidth: 300, // Ubah lebar menjadi 300
                         isFixedHeader: true,
-                        //Header table
                         headerWidgets: [
                           _getTitleItemWidget('No', 50),
                           _getTitleItemWidget('Barang', 200),
-                          _getTitleItemWidget('Stok', 100),
+                          _getTitleItemWidget('Stok', 50),
                         ],
                         leftSideItemBuilder: (BuildContext context, int index) {
-                          return _getBodyItemWidget((index + 1).toString(), 50);
+                          return _getBodyItemWidget(
+                              (start + index + 1).toString(), 50);
                         },
-                        rightSideItemBuilder: (BuildContext context, int index) {
-                          return _getRowWidget(filteredStocks[index], 600);
+                        rightSideItemBuilder:
+                            (BuildContext context, int index) {
+                          return _getRowWidget(stocksOnPage[index],
+                              300); // Ubah lebar menjadi 300
                         },
-                        itemCount: filteredStocks.length,
+                        itemCount: stocksOnPage.length,
                         rowSeparatorWidget: const Divider(
                           color: Colors.black54,
                           height: 1.0,
@@ -219,8 +191,7 @@ class _StockPageState extends State<StockPage> {
                   },
                 ),
               ),
-              // Navigasi halaman
-             Row(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton(
@@ -243,11 +214,12 @@ class _StockPageState extends State<StockPage> {
                       }
                     },
                   ),
-                  Text('Halaman $currentPage dari ${(filteredStocks.length / itemsPerPage).ceil()}'),
+                  Text(
+                      'Halaman $currentPage dari ${(totalStocks / itemsPerPage).ceil()}'),
                   IconButton(
                     icon: Icon(Icons.arrow_forward),
                     onPressed: () {
-                      if (currentPage < (filteredStocks.length / itemsPerPage).ceil()) {
+                      if (currentPage < (totalStocks / itemsPerPage).ceil()) {
                         setState(() {
                           currentPage++;
                         });
@@ -257,7 +229,7 @@ class _StockPageState extends State<StockPage> {
                   IconButton(
                     icon: Icon(Icons.last_page),
                     onPressed: () {
-                      int lastPage = (filteredStocks.length / itemsPerPage).ceil();
+                      int lastPage = (totalStocks / itemsPerPage).ceil();
                       if (currentPage != lastPage) {
                         setState(() {
                           currentPage = lastPage;
@@ -271,23 +243,9 @@ class _StockPageState extends State<StockPage> {
           ),
         ),
       ),
-      borderRadius: 24.0,
-      showShadow: true,
-      angle: -12.0,
-      slideWidth: MediaQuery.of(context).size.width * 0.65,
     );
   }
-  // Widget untuk menampilkan item di setiap baris
-Widget _getBodyItemWidget(String label, double width) {
-  return Container(
-    child: Text(label),
-    width: width,
-    height: 52,
-    padding: EdgeInsets.fromLTRB(5, 0, 0, 0),
-    alignment: Alignment.centerLeft,
-  );
-}
-  // Widget untuk menampilkan judul kolom
+
   Widget _getTitleItemWidget(String label, double width) {
     return Container(
       child: Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
@@ -297,18 +255,26 @@ Widget _getBodyItemWidget(String label, double width) {
       alignment: Alignment.centerLeft,
     );
   }
-// Widget untuk menampilkan data stok di setiap baris
-Widget _getRowWidget(Stock item, double width) {
-  return Row(
-    children: <Widget>[
-      _getBodyItemWidget(item.nama ?? '', 300),  
-      _getBodyItemWidget(
-          item.stokList.isNotEmpty
-              ? item.stokList[0].jumlah.toString()
-              : '0',
-          250  
-      ),
-    ],
-  );
-}
+
+  Widget _getBodyItemWidget(String label, double width) {
+    return Container(
+      child: Text(label),
+      width: width,
+      height: 52,
+      padding: EdgeInsets.fromLTRB(5, 0, 0, 0),
+      alignment: Alignment.centerLeft,
+    );
+  }
+
+  Widget _getRowWidget(Stock item, double width) {
+    return Row(
+      children: <Widget>[
+        _getBodyItemWidget(item.nama ?? '', 200), // Ubah lebar menjadi 200
+        _getBodyItemWidget(
+          item.stokList.isNotEmpty ? item.stokList[0].jumlah.toString() : '0',
+          50,
+        ),
+      ],
+    );
+  }
 }

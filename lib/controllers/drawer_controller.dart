@@ -5,7 +5,7 @@ class MyDrawerController extends GetxController {
   final zoomDrawerController = ZoomDrawerController();
 
   void toggleDrawer() {
-    zoomDrawerController.toggle?.call();
+    // zoomDrawerController.toggle?.call();
     update();
   }
 }

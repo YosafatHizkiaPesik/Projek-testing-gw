@@ -9,8 +9,8 @@ class DashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return ZoomDrawer(
       controller: _drawerController,
-      menuScreen: MenuDrawer(),  
-      mainScreen: MainScreen(),  
+      menuScreen: MenuDrawer(),
+      mainScreen: MainScreen(),
       borderRadius: 24.0,
       showShadow: true,
       angle: -12.0,
