@@ -8,6 +8,8 @@ import '../views/auth/login_page.dart';
 import '../views/master/customer_page.dart';
 import '../views/stok/stok_page.dart';
 import '../views/laporan/laporan_komisi_page.dart';
+import '../views/penjualan/penjualan_not_sent.dart';
+import '../views/penjualan/penjualan_sent.dart';
 import '../views/penjualan/detail_penjualan_customer.dart';
 
 class MenuDrawer extends StatefulWidget {
@@ -76,11 +78,11 @@ class _MenuDrawerState extends State<MenuDrawer> {
                   children: [
                     ListTile(
                       title: Text('Pesanan Penjualan (SO)'),
-                      onTap: () {},
+                      onTap: () => Get.off(() => PenjualanNotSentPage()),
                     ),
                     ListTile(
                       title: Text('Penjualan (Invoice)'),
-                      onTap: () {},
+                      onTap: () => Get.off(() => PenjualanSentPage()),
                     ),
                     ListTile(
                       title: Text('Detail Penjualan Customer'),

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart';
-import '../utils/contstants.dart';
+import '../utils/constants.dart';
 import '../models/komisi_sales.dart';
 import '../models/detail_per_sales.dart';
 import 'auth_controller.dart';

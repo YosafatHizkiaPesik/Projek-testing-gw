@@ -1,54 +1,57 @@
-import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
-import '../utils/contstants.dart';
+import '../utils/constants.dart';
 
-class AuthController with ChangeNotifier {
-  // Implementasi Singleton
+class AuthController extends GetxController {
   static final AuthController _instance = AuthController._internal();
+  final Dio _dio = Dio(); // Membuat instance Dio
 
-  // Factory method untuk mengembalikan instance
   factory AuthController() {
     return _instance;
   }
 
-  // Constructor internal untuk Singleton
-  AuthController._internal();
+  AuthController._internal() {
+    _dio.options.baseUrl = BASE_API_URL; // Menggunakan BASE_API_URL
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) {
+        options.headers['Authorization'] = 'Bearer ${_token.value}';
+        return handler.next(options);
+      },
+      onResponse: (response, handler) {
+        return handler.next(response);
+      },
+      onError: (DioError e, handler) {
+        return handler.next(e);
+      }
+    ));
+  }
 
-  // Variabel untuk menyimpan token dan data pengguna saat ini
-  String? _token;
-  User? _currentUser;
+  var _token = ''.obs;
+  var _currentUser = Rxn<User>();
 
-  // Getter untuk mendapatkan token saat ini
-  String? get token => _token;
+  String? get token => _token.value;
+  User? get currentUser => _currentUser.value;
 
-  // Getter untuk mendapatkan data pengguna saat ini
-  User? get currentUser => _currentUser;
-
-  // Simpan token ke SharedPreferences
   Future<void> _saveTokenToPrefs(String token) async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setString('userToken', token);
   }
 
-  // Ambil token dari SharedPreferences
   Future<String?> _getTokenFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('userToken');
   }
 
-  // Hapus token dari SharedPreferences
   Future<void> _removeTokenFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     prefs.remove('userToken');
   }
 
-  // Cek apakah pengguna sudah login dengan melihat adanya token
   Future<bool> isUserLoggedIn() async {
-    _token = await _getTokenFromPrefs();
-    if (_token != null) {
+    _token.value = await _getTokenFromPrefs() ?? '';
+    if (_token.value.isNotEmpty) {
       try {
         await fetchCurrentUser();
         return true;
@@ -59,59 +62,42 @@ class AuthController with ChangeNotifier {
     return false;
   }
 
-  // Melakukan proses login dan mengambil token jika sukses
   Future<void> login(String username, String password, String imei) async {
-    final response = await http.post(
-      Uri.parse(ApiEndpoints.AUTH_LOGIN),
-      headers: {'Accept': 'application/json'},
-      body: {'username': username, 'password': password, 'imei': imei},
-    );
+    try {
+      final response = await _dio.post(
+        ApiEndpoints.AUTH_LOGIN,
+        data: {'username': username, 'password': password, 'imei': imei},
+      );
 
-    if (response.statusCode == 200) {
-      final responseData = json.decode(response.body);
-      if (responseData.containsKey('access_token')) {
-        _token = responseData['access_token'];
-        await _saveTokenToPrefs(_token!);
+      if (response.statusCode == 200 && response.data.containsKey('access_token')) {
+        _token.value = response.data['access_token'];
+        await _saveTokenToPrefs(_token.value);
         await fetchCurrentUser();
       } else {
         throw Exception('Token tidak ditemukan dalam respons.');
       }
-    } else {
-      throw Exception('Gagal login. Silakan coba lagi.');
+    } catch (e) {
+      throw Exception('Gagal login. Silakan coba lagi. ${e.toString()}');
     }
   }
 
-  // Mengambil data pengguna saat ini berdasarkan token
   Future<void> fetchCurrentUser() async {
-    if (_token == null) {
-      _token = await _getTokenFromPrefs();
-      if (_token == null) {
-        throw Exception('Token tidak ditemukan. Pastikan Anda sudah login.');
+    try {
+      final response = await _dio.post(ApiEndpoints.AUTH_ME); // Diubah ke POST
+
+      if (response.statusCode == 200) {
+        _currentUser.value = User.fromJson(response.data);
+      } else {
+        throw Exception('Gagal mendapatkan data pengguna saat ini.');
       }
-    }
-
-    final response = await http.post(
-      Uri.parse(ApiEndpoints.AUTH_ME),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $_token',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final responseData = json.decode(response.body);
-      _currentUser = User.fromJson(responseData);
-      notifyListeners();
-    } else {
-      throw Exception('Gagal mendapatkan data pengguna saat ini.');
+    } catch (e) {
+      throw Exception('Gagal mendapatkan data pengguna: ${e.toString()}');
     }
   }
 
-  // Melakukan logout dan menghapus token serta data pengguna saat ini
   Future<void> logout() async {
     await _removeTokenFromPrefs();
-    _token = null;
-    _currentUser = null;
-    notifyListeners();
+    _token.value = '';
+    _currentUser.value = null;
   }
 }

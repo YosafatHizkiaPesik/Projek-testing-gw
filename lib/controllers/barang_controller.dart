@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../models/barang.dart';
-import '../utils/contstants.dart';
+import '../utils/constants.dart';
 import 'auth_controller.dart';
 
 class BarangController with ChangeNotifier {
