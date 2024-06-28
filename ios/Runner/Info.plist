@@ -49,5 +49,16 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		
+		<!-- Permissions for accessing files and downloading -->
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>App needs access to your photo library to save downloaded files.</string>
+		<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>App needs permission to add files to your photo library.</string>
+		<key>NSAppTransportSecurity</key>
+		<dict>
+			<key>NSAllowsArbitraryLoads</key>
+			<true/>
+		</dict>
 	</dict>
 </plist>

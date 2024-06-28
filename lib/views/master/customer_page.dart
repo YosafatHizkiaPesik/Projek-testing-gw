@@ -125,38 +125,40 @@ class _CustomerPageState extends State<CustomerPage> {
                     totalCustomers = customers.length;
 
                     return Expanded(
-                      child: HorizontalDataTable(
-                        leftHandSideColumnWidth: 50,
-                        rightHandSideColumnWidth: 600,
-                        isFixedHeader: true,
-                        headerWidgets: [
-                          _getTitleItemWidget('No', 50),
-                          _getTitleItemWidget(
-                              'Nama Customer', 200), // Ubah lebar menjadi 200
-                          _getTitleItemWidget('Alamat', 100),
-                          _getTitleItemWidget('No. Telepon', 100),
-                          _getTitleItemWidget('Kota', 100),
-                          _getTitleItemWidget('Term of Payment', 100),
-                          _getTitleItemWidget('Rekomendasi Harga', 100),
-                          _getTitleItemWidget(
-                              'Limit', 200), // Ubah lebar menjadi 200
-                        ],
-                        leftSideItemBuilder: (BuildContext context, int index) {
-                          return _getBodyItemWidget(
-                              (start + index + 1).toString(), 50);
-                        },
-                        rightSideItemBuilder:
-                            (BuildContext context, int index) {
-                          return _getRowWidget(customersOnPage[index], 600);
-                        },
-                        itemCount: customersOnPage.length,
-                        rowSeparatorWidget: const Divider(
-                          color: Colors.black54,
-                          height: 1.0,
-                          thickness: 0.0,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Container(
+                          width: 700,
+                          child: HorizontalDataTable(
+                            leftHandSideColumnWidth: 50,
+                            rightHandSideColumnWidth: 600,
+                            isFixedHeader: true,
+                            headerWidgets: [
+                              _getTitleItemWidget('No', 50),
+                              _getTitleItemWidget('Nama Customer', 200),
+                              _getTitleItemWidget('Alamat', 100),
+                              _getTitleItemWidget('No. Telepon', 100),
+                              _getTitleItemWidget('Kota', 100),
+                              _getTitleItemWidget('Term of Payment', 100),
+                              _getTitleItemWidget('Rekomendasi Harga', 100),
+                              _getTitleItemWidget('Limit', 200),
+                            ],
+                            leftSideItemBuilder: (BuildContext context, int index) {
+                              return _getBodyItemWidget((start + index + 1).toString(), 50);
+                            },
+                            rightSideItemBuilder: (BuildContext context, int index) {
+                              return _getRowWidget(customersOnPage[index], 600);
+                            },
+                            itemCount: customersOnPage.length,
+                            rowSeparatorWidget: const Divider(
+                              color: Colors.black54,
+                              height: 1.0,
+                              thickness: 0.0,
+                            ),
+                            leftHandSideColBackgroundColor: Color(0xFFFFFFFF),
+                            rightHandSideColBackgroundColor: Color(0xFFFFFFFF),
+                          ),
                         ),
-                        leftHandSideColBackgroundColor: Color(0xFFFFFFFF),
-                        rightHandSideColBackgroundColor: Color(0xFFFFFFFF),
                       ),
                     );
                   } else {
@@ -212,13 +214,11 @@ class _CustomerPageState extends State<CustomerPage> {
                       }
                     },
                   ),
-                  Text(
-                      'Halaman $currentPage dari ${(totalCustomers / itemsPerPage).ceil()}'),
+                  Text('Halaman $currentPage dari ${(totalCustomers / itemsPerPage).ceil()}'),
                   IconButton(
                     icon: Icon(Icons.arrow_forward),
                     onPressed: () {
-                      if (currentPage <
-                          (totalCustomers / itemsPerPage).ceil()) {
+                      if (currentPage < (totalCustomers / itemsPerPage).ceil()) {
                         setState(() {
                           currentPage++;
                         });
@@ -267,21 +267,19 @@ class _CustomerPageState extends State<CustomerPage> {
 
   Widget _getRowWidget(Customer customer, double width) {
     return Container(
+      width: width,
+      height: 52,
       child: Row(
         children: <Widget>[
-          _getBodyItemWidget(
-              customer.nama ?? '', 200), // Ubah lebar menjadi 200
+          _getBodyItemWidget(customer.nama ?? '', 200),
           _getBodyItemWidget(customer.alamat ?? '', 100),
           _getBodyItemWidget(customer.noTelepon ?? '', 100),
           _getBodyItemWidget(customer.kota ?? '', 100),
           _getBodyItemWidget(customer.termOfPayment ?? '', 100),
           _getBodyItemWidget(customer.rekomendasiHarga ?? '', 100),
-          _getBodyItemWidget(
-              customer.limit.toString(), 200), // Ubah lebar menjadi 200
+          _getBodyItemWidget(customer.limit.toString(), 200),
         ],
       ),
-      width: width,
-      height: 52,
     );
   }
 }

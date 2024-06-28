@@ -11,6 +11,8 @@ class ApiEndpoints {
 
   // Customer
   static const CUSTOMER = '${BASE_API_URL}customer';
+  // Sales
+  static const SALES = '${BASE_API_URL}penjualan_header';
 
   // Stok
   static const STOK = '${BASE_API_URL}stok';
@@ -23,6 +25,7 @@ class ApiEndpoints {
   // Penjualan
   static const DETAIL_PENJUALAN_CUSTOMER = '${BASE_API_URL}detail_penjualan_customer';
   static const INVOICE_PENJUALAN = '${BASE_API_URL}invoice_penjualan';
+  static const PENJUALAN_NOT_SENT = '${BASE_API_URL}penjualan/not_sent';
   static const PENJUALAN_HEADER = '${BASE_API_URL}penjualan_header';
   static const PENJUALAN_HEADER_DETAIL = '${BASE_API_URL}penjualan_header/';
 

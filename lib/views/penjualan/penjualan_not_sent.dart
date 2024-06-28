@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../controllers/penjualan_header_controller.dart';
 import '../../models/penjualan_header.dart';
 
@@ -9,18 +10,57 @@ class PenjualanNotSentPage extends StatefulWidget {
 }
 
 class _PenjualanNotSentPageState extends State<PenjualanNotSentPage> {
-  final PenjualanHeaderController _penjualanHeaderController = Get.put(PenjualanHeaderController());
+  final PenjualanHeaderController _penjualanHeaderController =
+      Get.put(PenjualanHeaderController());
   TextEditingController _searchController = TextEditingController();
+  TextEditingController _tanggalSOController =
+      TextEditingController(text: DateTime.now().toString().split(' ')[0]);
+  TextEditingController _keteranganController = TextEditingController();
   bool _isSearching = false;
+  String? _selectedSales;
+  String? _selectedCustomer;
+  String? _selectedJatuhTempo;
+  List<Object> _salesList = [];
+  List<Object> _customersList = [];
+  Offset _fabPosition = Offset(20, 20);
 
   @override
   void initState() {
     super.initState();
     _penjualanHeaderController.fetchPenjualanHeaders('not_sent');
+    _fetchInitialData();
   }
 
   Future<void> _refresh() async {
     await _penjualanHeaderController.refreshPenjualanHeadersNotSent();
+  }
+
+  Future<void> _fetchInitialData() async {
+    _salesList = await _penjualanHeaderController.fetchSales();
+    _customersList = await _penjualanHeaderController.fetchCustomers();
+    setState(() {});
+  }
+
+  void _submitSOForm() async {
+    final Map<String, dynamic> data = {
+      'sales_id': _selectedSales,
+      'customer_id': _selectedCustomer,
+      'tanggal_invoice': _tanggalSOController.text,
+      'tanggal_jatuh_tempo_invoice': _selectedJatuhTempo,
+      'keterangan': _keteranganController.text,
+    };
+
+    // Tambahkan SO baru dan simpan penjualan_header_id di SharedPreferences
+    final responseBody = await _penjualanHeaderController.storePenjualanHeader(data);
+    if (responseBody != null) {
+      await _savePenjualanHeaderId(responseBody['id']);
+      Get.toNamed('/penjualan_edit', arguments: responseBody['id']);
+    }
+  }
+
+  Future<void> _savePenjualanHeaderId(int id) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('penjualan_header_id', id);
   }
 
   void _showAddSOForm() {
@@ -34,24 +74,41 @@ class _PenjualanNotSentPageState extends State<PenjualanNotSentPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  TextFormField(
-                    decoration: InputDecoration(labelText: 'No Invoice'),
-                    initialValue: 'DJ202406002',
-                    readOnly: true,
-                  ),
                   DropdownButtonFormField(
-                    items: [], // Tambahkan list sales di sini
+                    items: _salesList.map((value) {
+                      final mapValue = value as Map<String, dynamic>;
+
+                      return DropdownMenuItem(
+                        value: mapValue["id"].toString(),
+                        child: Text(mapValue["nama"].toString()),
+                      );
+                    }).toList(),
                     decoration: InputDecoration(labelText: 'Sales'),
-                    onChanged: (value) {},
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedSales = value as String?;
+                      });
+                    },
                   ),
                   DropdownButtonFormField(
-                    items: [], // Tambahkan list customer di sini
+                    items: _customersList.map((value) {
+                      final mapValue = value as Map<String, dynamic>;
+
+                      return DropdownMenuItem(
+                        value: mapValue["id"].toString(),
+                        child: Text(mapValue["nama"].toString()),
+                      );
+                    }).toList(),
                     decoration: InputDecoration(labelText: 'Customer'),
-                    onChanged: (value) {},
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedCustomer = value as String?;
+                      });
+                    },
                   ),
                   TextFormField(
                     decoration: InputDecoration(labelText: 'Tanggal SO'),
-                    controller: TextEditingController(text: DateTime.now().toString().split(' ')[0]),
+                    controller: _tanggalSOController,
                     readOnly: true,
                     onTap: () async {
                       DateTime? pickedDate = await showDatePicker(
@@ -62,18 +119,41 @@ class _PenjualanNotSentPageState extends State<PenjualanNotSentPage> {
                       );
                       if (pickedDate != null) {
                         setState(() {
-                          // Set tanggal SO
+                          _tanggalSOController.text =
+                              pickedDate.toString().split(' ')[0];
                         });
                       }
                     },
                   ),
                   DropdownButtonFormField(
-                    items: [], // Tambahkan list jatuh tempo di sini
-                    decoration: InputDecoration(labelText: 'Tanggal Jatuh Tempo'),
-                    onChanged: (value) {},
+                    items: [
+                      '0',
+                      '3',
+                      '7',
+                      '14',
+                      '30',
+                      '40',
+                      '45',
+                      '60',
+                      '75',
+                      '90'
+                    ].map((String value) {
+                      return DropdownMenuItem(
+                        value: value,
+                        child: Text('$value Hari (+$value)'),
+                      );
+                    }).toList(),
+                    decoration:
+                        InputDecoration(labelText: 'Tanggal Jatuh Tempo'),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedJatuhTempo = value as String?;
+                      });
+                    },
                   ),
                   TextFormField(
                     decoration: InputDecoration(labelText: 'Keterangan'),
+                    controller: _keteranganController,
                   ),
                 ],
               ),
@@ -89,7 +169,8 @@ class _PenjualanNotSentPageState extends State<PenjualanNotSentPage> {
             TextButton(
               child: Text('TAMBAH'),
               onPressed: () {
-                // Implementasi fungsi tambah SO
+                _submitSOForm();
+                Navigator.of(context).pop();
               },
             ),
           ],
@@ -148,33 +229,51 @@ class _PenjualanNotSentPageState extends State<PenjualanNotSentPage> {
         return RefreshIndicator(
           onRefresh: _refresh,
           child: SingleChildScrollView(
-            child: PaginatedDataTable(
-              header: Text('Pesanan Penjualan (SO)'),
-              columns: [
-                DataColumn(label: Text('NO')),
-                DataColumn(label: Text('TANGGAL SO')),
-                DataColumn(label: Text('NO SO')),
-                DataColumn(label: Text('SALES')),
-                DataColumn(label: Text('CUSTOMER')),
-                DataColumn(label: Text('KETERANGAN')),
-                DataColumn(label: Text('TOTAL SO')),
-                DataColumn(label: Text('EDIT')),
-                DataColumn(label: Text('DETAIL')),
-                DataColumn(label: Text('PRINT SO')),
-                DataColumn(label: Text('HAPUS')),
+            child: Column(
+              children: [
+                PaginatedDataTable(
+                  header: Text('Pesanan Penjualan (SO)'),
+                  columns: [
+                    DataColumn(label: Text('NO')),
+                    DataColumn(label: Text('TANGGAL SO')),
+                    DataColumn(label: Text('NO SO')),
+                    DataColumn(label: Text('SALES')),
+                    DataColumn(label: Text('CUSTOMER')),
+                    DataColumn(label: Text('KETERANGAN')),
+                    DataColumn(label: Text('TOTAL SO')),
+                    DataColumn(label: Text('EDIT')),
+                    DataColumn(label: Text('DETAIL')),
+                    DataColumn(label: Text('PRINT SO')),
+                    DataColumn(label: Text('HAPUS')),
+                  ],
+                  source: PenjualanDataTableSource(
+                      _penjualanHeaderController.penjualanHeadersNotSent),
+                  rowsPerPage: 10,
+                  columnSpacing: 20,
+                  showCheckboxColumn: false,
+                ),
               ],
-              source: PenjualanDataTableSource(_penjualanHeaderController.penjualanHeadersNotSent),
-              rowsPerPage: 10,
-              columnSpacing: 20,
-              showCheckboxColumn: false,
             ),
           ),
         );
       }),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddSOForm,
-        child: Icon(Icons.add),
-        tooltip: 'Create Sales Order',
+      floatingActionButton: Draggable(
+        feedback: FloatingActionButton(
+          onPressed: _showAddSOForm,
+          child: Icon(Icons.add),
+          tooltip: 'Create Sales Order',
+        ),
+        child: FloatingActionButton(
+          onPressed: _showAddSOForm,
+          child: Icon(Icons.add),
+          tooltip: 'Create Sales Order',
+        ),
+        childWhenDragging: Container(),
+        onDragEnd: (details) {
+          setState(() {
+            _fabPosition = details.offset;
+          });
+        },
       ),
     );
   }
@@ -198,19 +297,31 @@ class PenjualanDataTableSource extends DataTableSource {
         DataCell(Text(penjualan.sales.nama)),
         DataCell(Text(penjualan.customer.nama)),
         DataCell(Text(penjualan.keterangan ?? '')),
-        DataCell(Text(penjualan.total)),
-        DataCell(IconButton(icon: Icon(Icons.edit), onPressed: () {
-          // Navigate to edit page
-        })),
-        DataCell(IconButton(icon: Icon(Icons.visibility), onPressed: () {
-          // Navigate to detail page
-        })),
-        DataCell(IconButton(icon: Icon(Icons.print), onPressed: () {
-          _printSO(penjualan.id);
-        })),
-        DataCell(IconButton(icon: Icon(Icons.delete), onPressed: () {
-          _deleteSO(penjualan.id);
-        })),
+        DataCell(Text(penjualan.total.toString())),
+        DataCell(IconButton(
+            icon: Icon(Icons.edit),
+            onPressed: () {
+              Get.toNamed('/penjualan_edit', arguments: penjualan.id);
+            })),
+        DataCell(IconButton(
+            icon: Icon(Icons.visibility),
+            onPressed: () {
+              // Navigate to detail page
+            })),
+        DataCell(IconButton(
+            icon: Icon(Icons.print),
+            onPressed: () {
+              _printSO(penjualan.id);
+            })),
+        DataCell(
+          penjualan.statusKirim != 2
+              ? IconButton(
+                  icon: Icon(Icons.delete),
+                  onPressed: () {
+                    _deleteSO(penjualan.id);
+                  })
+              : Container(), // Kondisi button delete
+        ),
       ],
     );
   }
