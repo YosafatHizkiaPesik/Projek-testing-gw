@@ -239,12 +239,15 @@ class PenjualanDetailController extends GetxController {
       }
 
       final response = await http.get(
-        Uri.parse(ApiEndpoints.SALES),
+        Uri.parse('${ApiEndpoints.PENJUALAN_HEADER}?status_kirim=not_sent'),
         headers: {
           'Accept': 'application/json',
           'Authorization': 'Bearer $token',
         },
       );
+
+      print("Penjualan Detail Response:");
+      print(response.body);
 
       if (response.statusCode == 200) {
         final List data = json.decode(response.body)['saleses'];

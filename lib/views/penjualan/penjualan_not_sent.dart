@@ -1,4 +1,6 @@
+import 'package:dwijaya_sales_app/views/penjualan/penjualan_edit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../controllers/penjualan_header_controller.dart';
@@ -28,6 +30,7 @@ class _PenjualanNotSentPageState extends State<PenjualanNotSentPage> {
   void initState() {
     super.initState();
     _penjualanHeaderController.fetchPenjualanHeaders('not_sent');
+    _penjualanHeaderController.fetchPenjualanHeaders('sent');
     _fetchInitialData();
   }
 
@@ -51,7 +54,8 @@ class _PenjualanNotSentPageState extends State<PenjualanNotSentPage> {
     };
 
     // Tambahkan SO baru dan simpan penjualan_header_id di SharedPreferences
-    final responseBody = await _penjualanHeaderController.storePenjualanHeader(data);
+    final responseBody =
+        await _penjualanHeaderController.storePenjualanHeader(data);
     if (responseBody != null) {
       await _savePenjualanHeaderId(responseBody['id']);
       Get.toNamed('/penjualan_edit', arguments: responseBody['id']);
@@ -223,6 +227,12 @@ class _PenjualanNotSentPageState extends State<PenjualanNotSentPage> {
         }
 
         if (_penjualanHeaderController.penjualanHeadersNotSent.isEmpty) {
+          print("_penjualanHeaderController.penjualanHeadersSent");
+          print(_penjualanHeaderController.penjualanHeadersSent);
+
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            Get.toNamed('/penjualan_edit', arguments: 1);
+          });
           return Center(child: Text('Tidak ada penjualan yang belum terkirim'));
         }
 

@@ -139,7 +139,8 @@ class PenjualanHeaderController extends GetxController {
   }
 
   // Fungsi untuk menambahkan SO baru
-  Future<Map<String, dynamic>?> storePenjualanHeader(Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>?> storePenjualanHeader(
+      Map<String, dynamic> data) async {
     isLoading.value = true;
     try {
       final token = _authController.token;
@@ -371,7 +372,7 @@ class PenjualanHeaderController extends GetxController {
     await _salesController.fetchSales();
     await _customerController.fetchCustomers();
   }
-  
+
   // Fungsi untuk mendapatkan akhir bulan dari tanggal tertentu
   String _getEndOfMonth(String date) {
     DateTime parsedDate = DateTime.parse(date);
