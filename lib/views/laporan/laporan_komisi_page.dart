@@ -3,30 +3,29 @@ import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
 import 'package:intl/intl.dart';
 import 'package:get/get.dart';
-import '../../widgets/menu_drawer.dart';  
-import '../../controllers/laporan_controller.dart';  
+import '../../widgets/menu_drawer.dart';
+import '../../controllers/laporan_controller.dart';
 
 class LaporanPage extends StatefulWidget {
-  final _drawerController = ZoomDrawerController();
-
   @override
   _LaporanPageState createState() => _LaporanPageState();
 }
 
 class _LaporanPageState extends State<LaporanPage> {
-  final dateFormat = DateFormat('dd/MM/yyyy');
+  final _drawerController = ZoomDrawerController();
+  final dateFormat = DateFormat('yyyy-MM-dd');
   DateTime _selectedStartDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
   DateTime _selectedEndDate = DateTime(DateTime.now().year, DateTime.now().month + 1, 0);
 
   Future<void> _selectDate(BuildContext context, bool isStart) async {
     DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: isStart ? _selectedStartDate : _selectedEndDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
 
-    if (pickedDate != null && pickedDate != DateTime.now()) {
+    if (pickedDate != null) {
       setState(() {
         if (isStart) {
           _selectedStartDate = pickedDate;
@@ -37,27 +36,20 @@ class _LaporanPageState extends State<LaporanPage> {
     }
   }
 
-  
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(Duration.zero, () {
-      final controller = Get.find<LaporanController>(); 
-      controller.refreshReports();
-    });
-  }
-
   Future<void> _handleRefresh() async {
     final controller = Get.find<LaporanController>();
-    await controller.refreshReports();
+    await controller.refreshReports(
+      awalTanggal: dateFormat.format(_selectedStartDate),
+      akhirTanggal: dateFormat.format(_selectedEndDate),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<LaporanController>();
-    
+    final controller = Get.put(LaporanController());
+
     return ZoomDrawer(
-      controller: widget._drawerController,
+      controller: _drawerController,
       menuScreen: MenuDrawer(),
       mainScreen: Scaffold(
         appBar: AppBar(
@@ -65,129 +57,107 @@ class _LaporanPageState extends State<LaporanPage> {
           leading: IconButton(
             icon: Icon(Icons.menu),
             onPressed: () {
-              if (ZoomDrawer.of(context)?.isOpen() ?? false) {
-                ZoomDrawer.of(context)?.close();
-              } else {
-                ZoomDrawer.of(context)?.open();
-              }
+              _drawerController.toggle!();
             },
           ),
         ),
-body: LiquidPullToRefresh(
-  onRefresh: _handleRefresh,  
-  child: Padding(
-    padding: const EdgeInsets.all(16.0),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Card untuk filter
-        Card(
-          elevation: 5,
+        body: LiquidPullToRefresh(
+          onRefresh: _handleRefresh,
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Filter Laporan Komisi Sales',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                // Card untuk filter
+                Card(
+                  elevation: 5,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Filter Laporan Komisi Sales',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Periode Awal'),
+                                  SizedBox(height: 8),
+                                  TextField(
+                                    readOnly: true,
+                                    controller: TextEditingController()
+                                      ..text = dateFormat.format(_selectedStartDate),
+                                    onTap: () async {
+                                      _selectDate(context, true);
+                                    },
+                                    decoration: InputDecoration(
+                                      border: OutlineInputBorder(),
+                                      suffixIcon: Icon(Icons.calendar_today),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Periode Akhir'),
+                                  SizedBox(height: 8),
+                                  TextField(
+                                    readOnly: true,
+                                    controller: TextEditingController()
+                                      ..text = dateFormat.format(_selectedEndDate),
+                                    onTap: () async {
+                                      _selectDate(context, false);
+                                    },
+                                    decoration: InputDecoration(
+                                      border: OutlineInputBorder(),
+                                      suffixIcon: Icon(Icons.calendar_today),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 16),
+                        // Tombol Download PDF
+                        ElevatedButton(
+                          onPressed: () async {
+                            String start = dateFormat.format(_selectedStartDate);
+                            String end = dateFormat.format(_selectedEndDate);
+                            print("Downloading PDF with period: $start to $end"); // Log period
+                            await controller.downloadPdf(
+                              awalTanggal: start,
+                              akhirTanggal: end,
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('PDF berhasil diunduh dan dibuka')),
+                            );
+                          },
+                          child: Text('Download PDF'),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Periode Awal'),
-                          SizedBox(height: 8),
-                          TextField(
-                            readOnly: true,
-                            controller: TextEditingController()
-                              ..text = dateFormat.format(_selectedStartDate), 
-                            onTap: () async {
-                              _selectDate(context, true);
-                            },
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(),
-                              suffixIcon: Icon(Icons.calendar_today)
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: 16),  
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Periode Akhir'),
-                          SizedBox(height: 8),
-                          TextField(
-                            readOnly: true,
-                            controller: TextEditingController()
-                              ..text = dateFormat.format(_selectedEndDate), 
-                            onTap: () async {
-                              _selectDate(context, false);
-                            },
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(),
-                              suffixIcon: Icon(Icons.calendar_today)
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    controller.refreshReports();
-                  },
-                  child: Text('Tampilkan Laporan'),
                 ),
               ],
             ),
           ),
         ),
-        SizedBox(height: 16),
-        // Tabel laporan
-        Expanded(
-          child: controller.isLoading
-            ? CircularProgressIndicator()
-            : controller.listKomisiSales != null && controller.listKomisiSales!.saleses.isNotEmpty
-              ? ListView.builder(
-                  itemCount: controller.listKomisiSales!.saleses.length,
-                  itemBuilder: (context, index) {
-                    final sales = controller.listKomisiSales!.saleses[index];
-                    return Card(
-                      elevation: 3,
-                      child: ListTile(
-                        title: Text(sales.nama),
-                        subtitle: Text('Total Penjualan: ${sales.totalPenjualan}'),
-                        trailing: Text('Total Komisi: ${sales.totalKomisi}'),
-                      ),
-                    );
-                  },
-                )
-              : Center(
-                  child: Text('Data tidak tersedia'),
-                ),
-        ),
-      ],
-    ),
-  ),
-),
       ),
-      borderRadius: 24.0,
-      showShadow: true,
-      angle: -12.0,
-      slideWidth: MediaQuery.of(context).size.width * 0.65,
     );
   }
 }

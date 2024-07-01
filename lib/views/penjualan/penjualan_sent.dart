@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:get/get.dart';
 import '../../controllers/penjualan_header_controller.dart';
-import '../../widgets/menu_drawer.dart';
 import '../../models/penjualan_header.dart';
+import '../../widgets/menu_drawer.dart';
 
 class PenjualanSentPage extends StatefulWidget {
   @override
@@ -11,8 +11,8 @@ class PenjualanSentPage extends StatefulWidget {
 }
 
 class _PenjualanSentPageState extends State<PenjualanSentPage> {
-  final _drawerController = ZoomDrawerController();
   final PenjualanHeaderController _penjualanHeaderController = Get.put(PenjualanHeaderController());
+  final _drawerController = ZoomDrawerController();
   TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
 
@@ -79,104 +79,67 @@ class _PenjualanSentPageState extends State<PenjualanSentPage> {
           }
 
           if (_penjualanHeaderController.penjualanHeadersSent.isEmpty) {
-            return SingleChildScrollView(
-              child: PaginatedDataTable(
-                header: Text('Pesanan Penjualan (Sent)'),
-                columns: [
-                  DataColumn(label: Text('NO')),
-                  DataColumn(label: Text('TANGGAL SO')),
-                  DataColumn(label: Text('NO SO')),
-                  DataColumn(label: Text('SALES')),
-                  DataColumn(label: Text('CUSTOMER')),
-                  DataColumn(label: Text('KETERANGAN')),
-                  DataColumn(label: Text('TOTAL SO')),
-                  DataColumn(label: Text('EDIT')),
-                  DataColumn(label: Text('DETAIL')),
-                  DataColumn(label: Text('PRINT SO')),
-                  DataColumn(label: Text('BATAL')),
-                ],
-                source: PenjualanDataTableSource([]),
-                rowsPerPage: 10,
-                columnSpacing: 20,
-                showCheckboxColumn: false,
-              ),
-            );
+            return Center(child: Text('No data available in table.'));
           }
 
-          return SingleChildScrollView(
-            child: PaginatedDataTable(
-              header: Text('Pesanan Penjualan (Sent)'),
-              columns: [
-                DataColumn(label: Text('NO')),
-                DataColumn(label: Text('TANGGAL SO')),
-                DataColumn(label: Text('NO SO')),
-                DataColumn(label: Text('SALES')),
-                DataColumn(label: Text('CUSTOMER')),
-                DataColumn(label: Text('KETERANGAN')),
-                DataColumn(label: Text('TOTAL SO')),
-                DataColumn(label: Text('EDIT')),
-                DataColumn(label: Text('DETAIL')),
-                DataColumn(label: Text('PRINT SO')),
-                DataColumn(label: Text('BATAL')),
-              ],
-              source: PenjualanDataTableSource(_penjualanHeaderController.penjualanHeadersSent),
-              rowsPerPage: 10,
-              columnSpacing: 20,
-              showCheckboxColumn: false,
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  DataTable(
+                    columns: [
+                      DataColumn(label: Text('NO')),
+                      DataColumn(label: Text('TANGGAL INVOICE')),
+                      DataColumn(label: Text('NO INVOICE')),
+                      DataColumn(label: Text('SALES')),
+                      DataColumn(label: Text('CUSTOMER')),
+                      DataColumn(label: Text('KETERANGAN')),
+                      DataColumn(label: Text('TOTAL INVOICE')),
+                      DataColumn(label: Text('REVISI')),
+                      DataColumn(label: Text('DETAIL')),
+                      DataColumn(label: Text('REPRINT INVOICE')),
+                    ],
+                    rows: _penjualanHeaderController.penjualanHeadersSent.map((penjualan) {
+                      return DataRow(cells: [
+                        DataCell(Text(penjualan.id.toString())),
+                        DataCell(Text(penjualan.tanggalInvoice)),
+                        DataCell(Text(penjualan.noInvoice)),
+                        DataCell(Text(penjualan.sales.nama)),
+                        DataCell(Text(penjualan.customer.nama)),
+                        DataCell(Text(penjualan.keterangan ?? '')),
+                        DataCell(Text(penjualan.total.toString())),
+                        DataCell(IconButton(
+                          icon: Icon(Icons.edit),
+                          onPressed: () {
+                            Get.toNamed('/penjualan_edit', arguments: penjualan.id);
+                          },
+                        )),
+                        DataCell(IconButton(
+                          icon: Icon(Icons.visibility),
+                          onPressed: () {
+                            // Navigate to detail page
+                          },
+                        )),
+                        DataCell(IconButton(
+                          icon: Icon(Icons.print),
+                          onPressed: () {
+                            _printInvoice(penjualan.id);
+                          },
+                        )),
+                      ]);
+                    }).toList(),
+                  ),
+                ],
+              ),
             ),
           );
         }),
       ),
     );
   }
-}
 
-class PenjualanDataTableSource extends DataTableSource {
-  final List<PenjualanHeader> _data;
-
-  PenjualanDataTableSource(this._data);
-
-  @override
-  DataRow getRow(int index) {
-    if (index >= _data.length) {
-      return DataRow.byIndex(
-        index: index,
-        cells: List.generate(11, (index) => DataCell(Text(''))),
-      );
-    }
-    final PenjualanHeader penjualan = _data[index];
-    return DataRow.byIndex(
-      index: index,
-      cells: [
-        DataCell(Text((index + 1).toString())),
-        DataCell(Text(penjualan.tanggalInvoice)),
-        DataCell(Text(penjualan.noInvoice)),
-        DataCell(Text(penjualan.sales.nama)),
-        DataCell(Text(penjualan.customer.nama)),
-        DataCell(Text(penjualan.keterangan ?? '')),
-        DataCell(Text(penjualan.total)),
-        DataCell(IconButton(icon: Icon(Icons.edit), onPressed: () {
-          // Navigate to edit page
-        })),
-        DataCell(IconButton(icon: Icon(Icons.visibility), onPressed: () {
-          // Navigate to detail page
-        })),
-        DataCell(IconButton(icon: Icon(Icons.print), onPressed: () {
-          // Print SO
-        })),
-        DataCell(IconButton(icon: Icon(Icons.cancel), onPressed: () {
-          // Cancel SO
-        })),
-      ],
-    );
+  void _printInvoice(int id) {
+    Get.find<PenjualanHeaderController>().printPenjualanHeader(id);
   }
-
-  @override
-  bool get isRowCountApproximate => false;
-
-  @override
-  int get rowCount => _data.length;
-
-  @override
-  int get selectedRowCount => 0;
 }

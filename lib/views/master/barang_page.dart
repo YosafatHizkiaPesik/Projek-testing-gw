@@ -18,10 +18,7 @@ class _BarangPageState extends State<BarangPage> {
   TextEditingController searchController = TextEditingController();
   bool showSearchBar = false;
 
-  int currentPage = 1;
-  int itemsPerPage = 10;
   List<Barang> filteredItems = [];
-  int totalBarang = 0;
 
   @override
   void initState() {
@@ -94,37 +91,27 @@ class _BarangPageState extends State<BarangPage> {
         body: LiquidPullToRefresh(
           onRefresh: _refresh,
           showChildOpacityTransition: false,
-          child: Column(
-            children: [
-              FutureBuilder<BarangResponse>(
-                future: futureBarang,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  }
-                  if (snapshot.hasData && snapshot.data != null) {
-                    final items = snapshot.data!.barangs ?? [];
+          child: FutureBuilder<BarangResponse>(
+            future: futureBarang,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              }
+              if (snapshot.hasData && snapshot.data != null) {
+                final items = snapshot.data!.barangs ?? [];
 
-                    final start = (currentPage - 1) * itemsPerPage;
+                filteredItems = items.where((item) {
+                  return item.nama!
+                      .toLowerCase()
+                      .contains(searchController.text.toLowerCase());
+                }).toList();
 
-                    filteredItems = items.where((item) {
-                      return item.nama!
-                          .toLowerCase()
-                          .contains(searchController.text.toLowerCase());
-                    }).toList();
-
-                    final end = start + itemsPerPage;
-                    final itemsOnPage = filteredItems.sublist(
-                      start,
-                      end.clamp(0, filteredItems.length),
-                    );
-
-                    totalBarang = items.length;
-
-                    return Expanded(
+                return Column(
+                  children: [
+                    Expanded(
                       child: HorizontalDataTable(
                         leftHandSideColumnWidth: 50,
                         rightHandSideColumnWidth: 600,
@@ -139,13 +126,12 @@ class _BarangPageState extends State<BarangPage> {
                         ],
                         leftSideItemBuilder: (BuildContext context, int index) {
                           return _getBodyItemWidget(
-                              (start + index + 1).toString(), 50);
+                              (index + 1).toString(), 50);
                         },
-                        rightSideItemBuilder:
-                            (BuildContext context, int index) {
-                          return _getRowWidget(itemsOnPage[index], 600);
+                        rightSideItemBuilder: (BuildContext context, int index) {
+                          return _getRowWidget(filteredItems[index], 600);
                         },
-                        itemCount: itemsOnPage.length,
+                        itemCount: filteredItems.length,
                         rowSeparatorWidget: const Divider(
                           color: Colors.black54,
                           height: 1.0,
@@ -154,86 +140,13 @@ class _BarangPageState extends State<BarangPage> {
                         leftHandSideColBackgroundColor: Color(0xFFFFFFFF),
                         rightHandSideColBackgroundColor: Color(0xFFFFFFFF),
                       ),
-                    );
-                  } else {
-                    return Center(child: Text('Data tidak tersedia.'));
-                  }
-                },
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(4.0),
-                  ),
-                  child: DropdownButton<int>(
-                    value: itemsPerPage,
-                    items: [10, 25, 50]
-                        .map((value) => DropdownMenuItem(
-                              value: value,
-                              child: Text("$value"),
-                            ))
-                        .toList(),
-                    onChanged: (newValue) {
-                      setState(() {
-                        itemsPerPage = newValue!;
-                        currentPage = 1;
-                      });
-                    },
-                  ),
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.first_page),
-                    onPressed: () {
-                      if (currentPage != 1) {
-                        setState(() {
-                          currentPage = 1;
-                        });
-                      }
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.arrow_back),
-                    onPressed: () {
-                      if (currentPage > 1) {
-                        setState(() {
-                          currentPage--;
-                        });
-                      }
-                    },
-                  ),
-                  Text(
-                      'Halaman $currentPage dari ${(totalBarang / itemsPerPage).ceil()}'),
-                  IconButton(
-                    icon: Icon(Icons.arrow_forward),
-                    onPressed: () {
-                      if (currentPage < (totalBarang / itemsPerPage).ceil()) {
-                        setState(() {
-                          currentPage++;
-                        });
-                      }
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.last_page),
-                    onPressed: () {
-                      int lastPage = (totalBarang / itemsPerPage).ceil();
-                      if (currentPage != lastPage) {
-                        setState(() {
-                          currentPage = lastPage;
-                        });
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ],
+                    ),
+                  ],
+                );
+              } else {
+                return Center(child: Text('Data tidak tersedia.'));
+              }
+            },
           ),
         ),
       ),

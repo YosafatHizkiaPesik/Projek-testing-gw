@@ -86,7 +86,7 @@ class _MenuDrawerState extends State<MenuDrawer> {
                     ),
                     ListTile(
                       title: Text('Detail Penjualan Customer'),
-                      // onTap: () => Get.off(() => DetailPenjualanCustomerPage()),
+                      onTap: () => Get.off(() => DetailPenjualanCustomerPage()),
                     ),
                   ],
                 ),

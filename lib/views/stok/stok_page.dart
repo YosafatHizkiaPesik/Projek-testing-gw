@@ -18,9 +18,6 @@ class _StockPageState extends State<StockPage> {
   TextEditingController searchController = TextEditingController();
   bool showSearchBar = false;
 
-  int currentPage = 1;
-  int itemsPerPage = 10;
-  int totalStocks = 0;
   List<Stock> filteredStocks = [];
 
   @override
@@ -102,65 +99,30 @@ class _StockPageState extends State<StockPage> {
         body: LiquidPullToRefresh(
           onRefresh: _refresh,
           showChildOpacityTransition: false,
-          child: Column(
-            children: [
-              Align(
-                alignment: Alignment.centerRight,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(4.0),
-                  ),
-                  child: DropdownButton<int>(
-                    value: itemsPerPage,
-                    items: [10, 25, 50]
-                        .map((value) => DropdownMenuItem(
-                              value: value,
-                              child: Text("$value"),
-                            ))
-                        .toList(),
-                    onChanged: (newValue) {
-                      setState(() {
-                        itemsPerPage = newValue!;
-                        currentPage = 1;
-                      });
-                    },
-                  ),
-                ),
-              ),
-              Expanded(
-                child: FutureBuilder<StockResponse>(
-                  future: futureStock,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
-                    }
-                    if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
-                    }
-                    if (snapshot.hasData && snapshot.data != null) {
-                      final stocks = snapshot.data!.stocks ?? [];
+          child: FutureBuilder<StockResponse>(
+            future: futureStock,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              }
+              if (snapshot.hasData && snapshot.data != null) {
+                final stocks = snapshot.data!.stocks ?? [];
 
-                      final start = (currentPage - 1) * itemsPerPage;
+                filteredStocks = stocks.where((stock) {
+                  return stock.nama!
+                      .toLowerCase()
+                      .contains(searchController.text.toLowerCase());
+                }).toList();
 
-                      filteredStocks = stocks.where((stock) {
-                        return stock.nama!
-                            .toLowerCase()
-                            .contains(searchController.text.toLowerCase());
-                      }).toList();
-
-                      final end = start + itemsPerPage;
-                      final stocksOnPage = filteredStocks.sublist(
-                        start,
-                        end.clamp(0, filteredStocks.length),
-                      );
-
-                      totalStocks = stocks.length;
-
-                      return HorizontalDataTable(
+                return Column(
+                  children: [
+                    Expanded(
+                      child: HorizontalDataTable(
                         leftHandSideColumnWidth: 50,
-                        rightHandSideColumnWidth: 300, // Ubah lebar menjadi 300
+                        rightHandSideColumnWidth: 300,
                         isFixedHeader: true,
                         headerWidgets: [
                           _getTitleItemWidget('No', 50),
@@ -169,14 +131,12 @@ class _StockPageState extends State<StockPage> {
                         ],
                         leftSideItemBuilder: (BuildContext context, int index) {
                           return _getBodyItemWidget(
-                              (start + index + 1).toString(), 50);
+                              (index + 1).toString(), 50);
                         },
-                        rightSideItemBuilder:
-                            (BuildContext context, int index) {
-                          return _getRowWidget(stocksOnPage[index],
-                              300); // Ubah lebar menjadi 300
+                        rightSideItemBuilder: (BuildContext context, int index) {
+                          return _getRowWidget(filteredStocks[index], 300);
                         },
-                        itemCount: stocksOnPage.length,
+                        itemCount: filteredStocks.length,
                         rowSeparatorWidget: const Divider(
                           color: Colors.black54,
                           height: 1.0,
@@ -184,62 +144,14 @@ class _StockPageState extends State<StockPage> {
                         ),
                         leftHandSideColBackgroundColor: Color(0xFFFFFFFF),
                         rightHandSideColBackgroundColor: Color(0xFFFFFFFF),
-                      );
-                    } else {
-                      return Center(child: Text('Data tidak tersedia.'));
-                    }
-                  },
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.first_page),
-                    onPressed: () {
-                      if (currentPage != 1) {
-                        setState(() {
-                          currentPage = 1;
-                        });
-                      }
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.arrow_back),
-                    onPressed: () {
-                      if (currentPage > 1) {
-                        setState(() {
-                          currentPage--;
-                        });
-                      }
-                    },
-                  ),
-                  Text(
-                      'Halaman $currentPage dari ${(totalStocks / itemsPerPage).ceil()}'),
-                  IconButton(
-                    icon: Icon(Icons.arrow_forward),
-                    onPressed: () {
-                      if (currentPage < (totalStocks / itemsPerPage).ceil()) {
-                        setState(() {
-                          currentPage++;
-                        });
-                      }
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.last_page),
-                    onPressed: () {
-                      int lastPage = (totalStocks / itemsPerPage).ceil();
-                      if (currentPage != lastPage) {
-                        setState(() {
-                          currentPage = lastPage;
-                        });
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ],
+                      ),
+                    ),
+                  ],
+                );
+              } else {
+                return Center(child: Text('Data tidak tersedia.'));
+              }
+            },
           ),
         ),
       ),
@@ -269,10 +181,10 @@ class _StockPageState extends State<StockPage> {
   Widget _getRowWidget(Stock item, double width) {
     return Row(
       children: <Widget>[
-        _getBodyItemWidget(item.nama ?? '', 200), // Ubah lebar menjadi 200
+        _getBodyItemWidget(item.nama ?? '', 200),
         _getBodyItemWidget(
           item.stokList.isNotEmpty ? item.stokList[0].jumlah.toString() : '0',
-          50,
+          100,
         ),
       ],
     );

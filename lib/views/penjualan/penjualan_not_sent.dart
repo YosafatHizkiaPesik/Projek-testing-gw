@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import '../../controllers/penjualan_header_controller.dart';
 import '../../models/penjualan_header.dart';
+import '../../widgets/menu_drawer.dart';
 
 class PenjualanNotSentPage extends StatefulWidget {
   @override
@@ -14,6 +16,7 @@ class PenjualanNotSentPage extends StatefulWidget {
 class _PenjualanNotSentPageState extends State<PenjualanNotSentPage> {
   final PenjualanHeaderController _penjualanHeaderController =
       Get.put(PenjualanHeaderController());
+  final _drawerController = ZoomDrawerController();
   TextEditingController _searchController = TextEditingController();
   TextEditingController _tanggalSOController =
       TextEditingController(text: DateTime.now().toString().split(' ')[0]);
@@ -185,105 +188,102 @@ class _PenjualanNotSentPageState extends State<PenjualanNotSentPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: _isSearching
-            ? TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Cari penjualan...',
-                  border: InputBorder.none,
-                ),
-                onChanged: (value) {
-                  _penjualanHeaderController.updateSearch(value);
-                },
-              )
-            : Text('Penjualan Not Sent'),
-        actions: [
-          _isSearching
-              ? IconButton(
-                  icon: Icon(Icons.close),
-                  onPressed: () {
-                    setState(() {
-                      _isSearching = false;
-                      _searchController.clear();
-                      _penjualanHeaderController.updateSearch('');
-                    });
+    return ZoomDrawer(
+      controller: _drawerController,
+      menuScreen: MenuDrawer(),
+      mainScreen: Scaffold(
+        appBar: AppBar(
+          title: _isSearching
+              ? TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Cari penjualan...',
+                    border: InputBorder.none,
+                  ),
+                  onChanged: (value) {
+                    _penjualanHeaderController.updateSearch(value);
                   },
                 )
-              : IconButton(
-                  icon: Icon(Icons.search),
-                  onPressed: () {
-                    setState(() {
-                      _isSearching = true;
-                    });
-                  },
-                ),
-        ],
-      ),
-      body: Obx(() {
-        if (_penjualanHeaderController.isLoading.value) {
-          return Center(child: CircularProgressIndicator());
-        }
+              : null,
+          leading: IconButton(
+            icon: Icon(Icons.menu),
+            onPressed: () {
+              _drawerController.toggle!();
+            },
+          ),
+          actions: [
+            _isSearching
+                ? IconButton(
+                    icon: Icon(Icons.close),
+                    onPressed: () {
+                      setState(() {
+                        _isSearching = false;
+                        _searchController.clear();
+                        _penjualanHeaderController.updateSearch('');
+                      });
+                    },
+                  )
+                : IconButton(
+                    icon: Icon(Icons.search),
+                    onPressed: () {
+                      setState(() {
+                        _isSearching = true;
+                      });
+                    },
+                  ),
+          ],
+        ),
+        body: Obx(() {
+          if (_penjualanHeaderController.isLoading.value) {
+            return Center(child: CircularProgressIndicator());
+          }
 
-        if (_penjualanHeaderController.penjualanHeadersNotSent.isEmpty) {
-          print("_penjualanHeaderController.penjualanHeadersSent");
-          print(_penjualanHeaderController.penjualanHeadersSent);
+          if (_penjualanHeaderController.penjualanHeadersNotSent.isEmpty) {
+            return Center(child: Text('Tidak ada penjualan yang belum terkirim'));
+          }
 
-          SchedulerBinding.instance.addPostFrameCallback((_) {
-            Get.toNamed('/penjualan_edit', arguments: 1);
-          });
-          return Center(child: Text('Tidak ada penjualan yang belum terkirim'));
-        }
-
-        return RefreshIndicator(
-          onRefresh: _refresh,
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                PaginatedDataTable(
-                  header: Text('Pesanan Penjualan (SO)'),
-                  columns: [
-                    DataColumn(label: Text('NO')),
-                    DataColumn(label: Text('TANGGAL SO')),
-                    DataColumn(label: Text('NO SO')),
-                    DataColumn(label: Text('SALES')),
-                    DataColumn(label: Text('CUSTOMER')),
-                    DataColumn(label: Text('KETERANGAN')),
-                    DataColumn(label: Text('TOTAL SO')),
-                    DataColumn(label: Text('EDIT')),
-                    DataColumn(label: Text('DETAIL')),
-                    DataColumn(label: Text('PRINT SO')),
-                    DataColumn(label: Text('HAPUS')),
-                  ],
-                  source: PenjualanDataTableSource(
-                      _penjualanHeaderController.penjualanHeadersNotSent),
-                  rowsPerPage: 10,
-                  columnSpacing: 20,
-                  showCheckboxColumn: false,
-                ),
-              ],
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  PaginatedDataTable(
+                    header: Text('Pesanan Penjualan (SO)'),
+                    columns: [
+                      DataColumn(label: Text('NO')),
+                      DataColumn(label: Text('TANGGAL SO')),
+                      DataColumn(label: Text('NO SO')),
+                      DataColumn(label: Text('SALES')),
+                      DataColumn(label: Text('CUSTOMER')),
+                      DataColumn(label: Text('KETERANGAN')),
+                      DataColumn(label: Text('TOTAL SO')),
+                      DataColumn(label: Text('EDIT')),
+                      DataColumn(label: Text('DETAIL')),
+                      DataColumn(label: Text('PRINT SO')),
+                      DataColumn(label: Text('HAPUS')),
+                    ],
+                    source: PenjualanDataTableSource(
+                        _penjualanHeaderController.penjualanHeadersNotSent),
+                    rowsPerPage: 10,
+                    columnSpacing: 20,
+                    showCheckboxColumn: false,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+        floatingActionButton: Align(
+          alignment: Alignment.bottomLeft,
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: FloatingActionButton(
+              onPressed: _showAddSOForm,
+              child: Icon(Icons.add),
+              tooltip: 'Create Sales Order',
             ),
           ),
-        );
-      }),
-      floatingActionButton: Draggable(
-        feedback: FloatingActionButton(
-          onPressed: _showAddSOForm,
-          child: Icon(Icons.add),
-          tooltip: 'Create Sales Order',
         ),
-        child: FloatingActionButton(
-          onPressed: _showAddSOForm,
-          child: Icon(Icons.add),
-          tooltip: 'Create Sales Order',
-        ),
-        childWhenDragging: Container(),
-        onDragEnd: (details) {
-          setState(() {
-            _fabPosition = details.offset;
-          });
-        },
       ),
     );
   }

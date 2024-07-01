@@ -6,15 +6,21 @@ import '../models/detail_penjualan_customer.dart';
 import 'auth_controller.dart';
 
 class DetailPenjualanCustomerController with ChangeNotifier {
-  List<DetailPenjualanCustomer> _detailPenjualan = [];
+  DetailPenjualanCustomer? _detailPenjualanCustomer;
   bool isLoading = false;
   String? errorMessage;
 
   final AuthController _authController = AuthController();
 
-  List<DetailPenjualanCustomer> get detailPenjualan => [..._detailPenjualan];
+  DetailPenjualanCustomer? get detailPenjualanCustomer => _detailPenjualanCustomer;
 
-  Future<DetailPenjualanCustomer> fetchDetailPenjualan() async {
+  Future<void> fetchDetailPenjualanCustomer({
+    required String cabangId,
+    required String customerId,
+    required String barangId,
+    required String awalTanggal,
+    required String akhirTanggal,
+  }) async {
     isLoading = true;
     notifyListeners();
 
@@ -29,15 +35,24 @@ class DetailPenjualanCustomerController with ChangeNotifier {
         'Authorization': 'Bearer $token',
       };
 
-      final response = await http.get(Uri.parse(ApiEndpoints.DETAIL_PENJUALAN_CUSTOMER), headers: headers);
+      final queryParameters = {
+        'filter_clicked': 'true',
+        'cabang_id': cabangId,
+        'customer_id': customerId,
+        'barang_id': barangId,
+        'awal_tanggal': awalTanggal,
+        'akhir_tanggal': akhirTanggal,
+      };
+
+      final uri = Uri.parse(ApiEndpoints.DETAIL_PENJUALAN_CUSTOMER).replace(queryParameters: queryParameters);
+      final response = await http.get(uri, headers: headers);
 
       if (response.statusCode == 200) {
         final DetailPenjualanCustomer detailPenjualanResponse = DetailPenjualanCustomer.fromJson(json.decode(response.body));
-        _detailPenjualan = [detailPenjualanResponse];
+        _detailPenjualanCustomer = detailPenjualanResponse;
         errorMessage = null;
         isLoading = false;
         notifyListeners();
-        return detailPenjualanResponse;
       } else {
         errorMessage = 'Gagal mengambil data penjualan';
         throw Exception(errorMessage);
@@ -52,8 +67,20 @@ class DetailPenjualanCustomerController with ChangeNotifier {
     }
   }
 
-  Future<void> refreshDetailPenjualan() async {
-    await fetchDetailPenjualan();
+  Future<void> refreshDetailPenjualanCustomer({
+    required String cabangId,
+    required String customerId,
+    required String barangId,
+    required String awalTanggal,
+    required String akhirTanggal,
+  }) async {
+    await fetchDetailPenjualanCustomer(
+      cabangId: cabangId,
+      customerId: customerId,
+      barangId: barangId,
+      awalTanggal: awalTanggal,
+      akhirTanggal: akhirTanggal,
+    );
     notifyListeners();
   }
 }

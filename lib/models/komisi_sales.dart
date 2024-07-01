@@ -3,7 +3,7 @@ class ListKomisiSales {
   final int totalHppSemuaSales;
   final int totalLabaSemuaSales;
   final int totalKomisiSemuaSales;
-  final List<Sales> saleses;
+  final List<Sales> sales;
   final FilterResult filterResult;
 
   ListKomisiSales({
@@ -11,7 +11,7 @@ class ListKomisiSales {
     required this.totalHppSemuaSales,
     required this.totalLabaSemuaSales,
     required this.totalKomisiSemuaSales,
-    required this.saleses,
+    required this.sales,
     required this.filterResult,
   });
 
@@ -21,7 +21,7 @@ class ListKomisiSales {
       totalHppSemuaSales: json['total_hpp_semua_sales'],
       totalLabaSemuaSales: json['total_laba_semua_sales'],
       totalKomisiSemuaSales: json['total_komisi_semua_sales'],
-      saleses: (json['saleses'] as List)
+      sales: (json['sales'] as List)
           .map((item) => Sales.fromJson(item))
           .toList(),
       filterResult: FilterResult.fromJson(json['filter_result']),
